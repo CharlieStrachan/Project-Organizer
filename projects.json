@@ -1,0 +1,14 @@
+[
+    {
+        "name": "Habit Tracker",
+        "description": "A simple habit tracker application to help build healthy habits",
+        "tasks": [
+            "Convert to oop"
+        ]
+    },
+    {
+        "name": "Project Organizer",
+        "description": "A simple project organizer app that helps manage tasks for specific projects",
+        "tasks": []
+    }
+]
