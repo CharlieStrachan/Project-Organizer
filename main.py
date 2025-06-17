@@ -150,10 +150,11 @@ class MainWindow(QMainWindow):
         add_project_button.setStyleSheet(style_sheet(2))
         horizontal_layout.addWidget(add_project_button, alignment=Qt.AlignTop)
         
-        clear_projects_button = QPushButton("Clear Projects")
-        clear_projects_button.clicked.connect(lambda: self.clear_projects())
-        clear_projects_button.setStyleSheet(style_sheet(2))
-        horizontal_layout.addWidget(clear_projects_button, alignment=Qt.AlignTop)
+        if projects:            
+            clear_projects_button = QPushButton("Clear Projects")
+            clear_projects_button.clicked.connect(lambda: self.clear_projects())
+            clear_projects_button.setStyleSheet(style_sheet(2))
+            horizontal_layout.addWidget(clear_projects_button, alignment=Qt.AlignTop)
 
         layout.addLayout(horizontal_layout)
         
@@ -285,10 +286,11 @@ class ManageProject(QMainWindow):
         add_task_button.setStyleSheet(style_sheet(2))
         horizontal_layout.addWidget(add_task_button)
         
-        clear_tasks_button = QPushButton("Clear Tasks")
-        clear_tasks_button.clicked.connect(lambda: self.clear_tasks(self.project))
-        clear_tasks_button.setStyleSheet(style_sheet(2))
-        horizontal_layout.addWidget(clear_tasks_button)
+        if self.project.tasks:            
+            clear_tasks_button = QPushButton("Clear Tasks")
+            clear_tasks_button.clicked.connect(lambda: self.clear_tasks(self.project))
+            clear_tasks_button.setStyleSheet(style_sheet(2))
+            horizontal_layout.addWidget(clear_tasks_button)
 
         self.layout.addLayout(horizontal_layout)
 
