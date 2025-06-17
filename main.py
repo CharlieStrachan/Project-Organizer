@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import ( # type: ignore
     QMainWindow, QApplication, QHBoxLayout, QVBoxLayout, QPushButton, QLineEdit,
-    QTextEdit, QInputDialog, QWidget, QLabel, QCheckBox, QDialog
+    QTextEdit, QInputDialog, QWidget, QLabel, QCheckBox, QDialog, QMessageBox
 ) # type: ignore
 from PySide6.QtCore import Qt # type: ignore
 from PySide6.QtGui import QIcon, QFont # type: ignore
@@ -163,10 +163,18 @@ class MainWindow(QMainWindow):
         name_edit.setPlaceholderText("Enter project name here...")
         layout.addWidget(name_edit)
 
+        if not name_edit:
+            QMessageBox.warning(self, "Warning", "Project name cannot be empty.")
+            return
+
         desc_edit = QTextEdit()
         desc_edit.setPlainText(project.description)
         desc_edit.setPlaceholderText("Enter project description here...")
         layout.addWidget(desc_edit)
+        
+        if not desc_edit:
+            QMessageBox.warning(self, "Warning", "Project description cannot be empty.")
+            return
 
         button_layout = QHBoxLayout()
 
