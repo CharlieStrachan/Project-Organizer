@@ -144,11 +144,19 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(central_widget)
         layout = QVBoxLayout(central_widget)
 
+        horizontal_layout = QHBoxLayout()
         add_project_button = QPushButton("Add Project")
         add_project_button.clicked.connect(lambda: self.edit_project_details(Project(name="", description=""), mode="add"))
         add_project_button.setStyleSheet(style_sheet(2))
-        layout.addWidget(add_project_button, alignment=Qt.AlignTop)
+        horizontal_layout.addWidget(add_project_button, alignment=Qt.AlignTop)
+        
+        clear_projects_button = QPushButton("Clear Projects")
+        clear_projects_button.clicked.connect(lambda: self.clear_projects())
+        clear_projects_button.setStyleSheet(style_sheet(2))
+        horizontal_layout.addWidget(clear_projects_button, alignment=Qt.AlignTop)
 
+        layout.addLayout(horizontal_layout)
+        
         if not projects:
             no_projects_label = QLabel("No current projects.")
             no_projects_label.setAlignment(Qt.AlignCenter)
@@ -177,6 +185,14 @@ class MainWindow(QMainWindow):
 
             layout.addStretch()
 
+    def clear_projects(self):
+        item, ok = QInputDialog.getItem(self, "Clear Projects", "Are you sure you want to clear all projects?", ["Yes", "No"])
+        if ok and item == "Yes":
+            global projects
+            projects = []
+            save_projects(projects)
+            self.refresh_ui()
+            
     def edit_project_details(self, project: Project, mode="edit"):
         dialog = QDialog(self)
         dialog.setWindowTitle("Edit Project Details")
