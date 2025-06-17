@@ -105,7 +105,14 @@ def style_sheet(sheet):
         """
     elif sheet == 3:
         return """
-        QCheckBox QPushButton {
+        QCheckBox {
+            background-color: #343A40;
+            border-radius: 5px;
+            padding: 5px;
+            font-size: 18px;
+        }
+        
+        QPushButton {
             background-color: #343A40;
             border-radius: 5px;
             padding: 5px;
