@@ -1,4 +1,3 @@
-from networkx import project
 from PySide6.QtWidgets import ( # type: ignore
     QMainWindow, QApplication, QHBoxLayout, QVBoxLayout, QPushButton, QLineEdit,
     QTextEdit, QInputDialog, QWidget, QLabel, QCheckBox, QDialog, QMessageBox
