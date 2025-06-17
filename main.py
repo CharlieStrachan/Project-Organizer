@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QMainWindow, QApplication, QVBoxLayout, QHBoxLayout, QPushButton, QWidget, QInputDialog, QCheckBox, QLineEdit, QTextEdit, QLabel # type: ignore
+from PySide6.QtWidgets import QMainWindow, QApplication, QVBoxLayout, QHBoxLayout, QPushButton, QWidget, QInputDialog, QCheckBox, QLineEdit, QTextEdit, QLabel,QMessageBox # type: ignore
 from PySide6.QtGui import Qt, QIcon # type: ignore
 
 from dataclasses import dataclass, field
@@ -127,7 +127,11 @@ class MainWindow(QMainWindow):
             new_name = name_edit.text().strip()
             new_desc = desc_edit.toPlainText().strip()
             if not new_name:
-                print("Project name cannot be empty.")
+                error_popup = QMessageBox()
+                error_popup.setWindowTitle("Error")
+                error_popup.setText(f"An error occurred:\nProject name cannot be empty.")
+                error_popup.setIcon(QMessageBox.Critical)
+                error_popup.exec()
                 return
             if new_name != project.name and any(p.name == new_name for p in projects):
                 print("Project with this name already exists.")
