@@ -1,3 +1,4 @@
+from networkx import project
 from PySide6.QtWidgets import ( # type: ignore
     QMainWindow, QApplication, QHBoxLayout, QVBoxLayout, QPushButton, QLineEdit,
     QTextEdit, QInputDialog, QWidget, QLabel, QCheckBox, QDialog, QMessageBox
@@ -284,6 +285,11 @@ class ManageProject(QMainWindow):
         add_task_button.clicked.connect(lambda: self.add_task(self.project))
         add_task_button.setStyleSheet(style_sheet(2))
         horizontal_layout.addWidget(add_task_button)
+        
+        clear_tasks_button = QPushButton("Clear Tasks")
+        clear_tasks_button.clicked.connect(lambda: self.clear_tasks(self.project))
+        clear_tasks_button.setStyleSheet(style_sheet(2))
+        horizontal_layout.addWidget(clear_tasks_button)
 
         self.layout.addLayout(horizontal_layout)
 
@@ -311,6 +317,13 @@ class ManageProject(QMainWindow):
             
             self.layout.addLayout(task_layout)
         self.layout.addStretch()
+    
+    def clear_tasks(self, project: Project):
+        item, ok = QInputDialog.getItem(self, "Clear Tasks", f"Are you sure you want to clear all tasks for '{project.name}'?", ["Yes", "No"])
+        if ok and item == "Yes":
+            project.tasks.clear()
+            save_projects(projects)
+            self.refresh_ui()
     
     def add_task(self, project: Project):
         task_name, ok = QInputDialog.getText(self, "Add Task", "Enter task name:")
