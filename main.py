@@ -1,232 +1,310 @@
-from PySide6.QtWidgets import QMainWindow, QApplication, QVBoxLayout, QHBoxLayout, QPushButton, QWidget, QInputDialog, QCheckBox, QLineEdit, QTextEdit, QLabel # type: ignore
-from PySide6.QtGui import Qt, QIcon # type: ignore
+from PySide6.QtWidgets import ( # type: ignore
+    QMainWindow, QApplication, QHBoxLayout, QVBoxLayout, QPushButton, QLineEdit,
+    QTextEdit, QInputDialog, QWidget, QLabel, QCheckBox, QDialog
+) # type: ignore
+from PySide6.QtCore import Qt # type: ignore
+from PySide6.QtGui import QIcon, QFont # type: ignore
 
 from dataclasses import dataclass, field
 
+import sys
 import json
+
+app = QApplication(sys.argv)
+
+@dataclass
+class Task:
+    name: str
+    completed: bool = False
 
 @dataclass
 class Project:
     name: str
     description: str = "No description provided."
-    tasks: list = field(default_factory=list)
+    tasks: list[Task] = field(default_factory=list)
 
-def load_projects() -> list[Project]:
+def load_projects(filename="projects.json"):
     try:
-        with open("projects.json", "r") as file:
+        with open(filename, "r") as file:
             data = json.load(file)
-            return [Project(**project) for project in data]
+            projects = []
+            for proj in data:
+                tasks = [Task(**t) for t in proj.get("tasks", [])]
+                projects.append(Project(
+                    name=proj["name"],
+                    description=proj.get("description", "No description provided."),
+                    tasks=tasks
+                ))
+            return projects
     except FileNotFoundError:
         return []
     except json.JSONDecodeError:
-        print("Error decoding JSON. Returning empty project list.")
+        print("Error decoding JSON. Starting with an empty project list.")
         return []
-def save_projects(projects: list[Project]):
-    with open("projects.json", "w") as file:
-        json.dump([project.__dict__ for project in projects], file, indent=4)
 
-projects: list[Project] = load_projects()
+def save_projects(projects, filename="projects.json"):
+    def project_to_dict(proj):
+        return {
+            "name": proj.name,
+            "description": proj.description,
+            "tasks": [task.__dict__ for task in proj.tasks]
+        }
+    with open(filename, "w") as file:
+        json.dump([project_to_dict(proj) for proj in projects], file, indent=4)
 
-def style_sheet(style: int):
-    if style == 1:
+icon = QIcon("icon.png")
+font = QFont("Arial", 14)
+
+projects = load_projects()
+
+def style_sheet(sheet):
+    if sheet == 1:
         return """
         QMainWindow {
-            background-color: #212528;
-            color: #ffffff
+            background-color: #212529;
+            color: white;
+            font-family: Arial, sans-serif;
+            font-size: 15px;
         }
-
-        QPushButton {
-            border-radius: 5px;
-            background-color: #343A40;
+                
+        QWidget {
+            background-color: #212529;
+            color: white;
         }
         
-        QPushButton:hover {
+        QLineEdit, QTextEdit {
+            background-color: #343A40;
+            border-radius: 5px;
+            padding: 5px;
+        }
+        
+        QPushButton {
+            background-color: #343A40;
+            border-radius: 5px;
+            font-family: Arial, sans-serif;
+        }
+        
+        QPushButton:hover{
             background-color: #495057;
         }
+        
+        QCheckBox {
+            min-height: 30px;
+            font-size: 18px;
+        }
+
         """
-    elif style == 2:
+    elif sheet == 2:
         return """
         QPushButton {
             height: 50px;
+            font-size: 18px;
         }
         """
-    return
+    else:
+        return """"""
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Project Manager")
-        self.icon = QIcon("icon.png")
-        self.setWindowIcon(self.icon)
+        self.setWindowIcon(icon)
         self.setStyleSheet(style_sheet(1))
         self.setGeometry(100, 100, 800, 600)
         self.setup_ui()
-    
+
     def setup_ui(self):
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         layout = QVBoxLayout(central_widget)
 
-        add_project_button = QPushButton("Add new project")
+        add_project_button = QPushButton("Add Project")
+        add_project_button.clicked.connect(lambda: self.edit_project_details(Project(name="", description=""), mode="add"))
         add_project_button.setStyleSheet(style_sheet(2))
-        add_project_button.clicked.connect(self.add_project)
-        layout.addWidget(add_project_button)
+        layout.addWidget(add_project_button, alignment=Qt.AlignTop)
 
-        for project in projects:
-            project_layout = QHBoxLayout()
+        if not projects:
+            no_projects_label = QLabel("No current projects.")
+            no_projects_label.setAlignment(Qt.AlignCenter)
+            layout.addWidget(no_projects_label)
+            layout.addStretch()
+            return
+        else:
+            for project in projects:
+                horizontal_layout = QHBoxLayout()
+                project_label = QPushButton(project.name)
+                project_label.clicked.connect(lambda _, p=project: ManageProject(p).show())
+                project_label.setStyleSheet(style_sheet(2))
+                horizontal_layout.addWidget(project_label)
 
-            manage_project_button = QPushButton(project.name)
-            manage_project_button.setStyleSheet(style_sheet(2))
-            manage_project_button.clicked.connect(lambda _, p=project: self.manage_project(p))
-            project_layout.addWidget(manage_project_button)
+                edit_details_button = QPushButton("Edit Details")
+                edit_details_button.clicked.connect(lambda _, p=project: self.edit_project_details(p))
+                edit_details_button.setStyleSheet(style_sheet(2))
+                horizontal_layout.addWidget(edit_details_button)
 
-            edit_project_details_button = QPushButton("Edit details")
-            edit_project_details_button.setStyleSheet(style_sheet(2))
-            edit_project_details_button.clicked.connect(lambda _, p=project: self.edit_project_details(p))
-            project_layout.addWidget(edit_project_details_button)
+                delete_project_button = QPushButton("Delete")
+                delete_project_button.clicked.connect(lambda _, p=project: self.delete_project(p))
+                delete_project_button.setStyleSheet(style_sheet(2))
+                horizontal_layout.addWidget(delete_project_button)
 
-            remove_project_button = QPushButton("Remove project")
-            remove_project_button.setStyleSheet(style_sheet(2))
-            remove_project_button.clicked.connect(lambda _, p=project: self.remove_project(p))
-            project_layout.addWidget(remove_project_button)
+                layout.addLayout(horizontal_layout)
 
-            layout.addLayout(project_layout)
-        
-    def add_project(self):
-        self.edit_project_details(Project(name="", description="",), title="Add New Project")
+            layout.addStretch()
 
-    def edit_project_details(self, project: Project, title: str = "Edit Project Details"):
-        dialog = QWidget()
-        dialog.setWindowTitle(title)
-        dialog.setWindowIcon(self.icon)
+    def edit_project_details(self, project: Project, mode="edit"):
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Edit Project Details")
+        dialog.setWindowIcon(icon)
         dialog.setStyleSheet(style_sheet(1))
         dialog.setGeometry(300, 300, 400, 200)
         layout = QVBoxLayout(dialog)
 
-        project_name_label = QLabel("Project Name")
-        project_description_label = QLabel("Project Description")
-        layout.addWidget(project_name_label)
         name_edit = QLineEdit(project.name)
         name_edit.setPlaceholderText("Enter project name here...")
         layout.addWidget(name_edit)
-        
-        layout.addWidget(project_description_label)
+
         desc_edit = QTextEdit()
         desc_edit.setPlainText(project.description)
         desc_edit.setPlaceholderText("Enter project description here...")
         layout.addWidget(desc_edit)
 
         button_layout = QHBoxLayout()
-        save_button = QPushButton("Save")
+
         cancel_button = QPushButton("Cancel")
-        button_layout.addWidget(save_button)
         button_layout.addWidget(cancel_button)
+
+        done_button = QPushButton("Done")
+        button_layout.addWidget(done_button)
+
         layout.addLayout(button_layout)
 
-        def save_changes():
-            new_name = name_edit.text().strip()
-            new_desc = desc_edit.toPlainText().strip()
-            if not new_name:
-                print("Project name cannot be empty.")
-                return
-            if new_name != project.name and any(p.name == new_name for p in projects):
-                print("Project with this name already exists.")
-                return
-            project.name = new_name
-            project.description = new_desc
-            save_projects(projects)
-            self.setup_ui()
-            dialog.close()
-
-        save_button.clicked.connect(save_changes)
         cancel_button.clicked.connect(dialog.close)
 
-        dialog.setWindowModality(Qt.WindowModality.ApplicationModal)
-        dialog.show()
-        
+        def on_done():
+            name = name_edit.text().strip()
+            desc = desc_edit.toPlainText().strip()
+            if not name:
+                return
+            if mode == "edit":
+                project.name = name
+                project.description = desc
+            else:
+                projects.append(Project(name=name, description=desc))
+            save_projects(projects)
+            dialog.accept()
+            self.refresh_ui()
 
-    def manage_project(self, project: Project):
-        self.project_window = ManageProjects(project)
-        self.project_window.show()
+        done_button.clicked.connect(on_done)
 
-    def remove_project(self, project: Project):
-        if not project:
-            return
-        if not any(p.name == project.name for p in projects):
-            print("Project not found.")
-            return
-        if len(projects) == 1:
-            print("Cannot remove the last project.")
-            return
-            
-        confirmation = QInputDialog.getItem(self, "Remove Project", "Are you sure you want to remove this project?", ["Yes", "No"], 0, False)
-        if confirmation[0] != "Yes":
-            return
-        
-        projects.remove(project)
-        save_projects(projects)
+        dialog.exec()
+
+    def refresh_ui(self):
+        self.centralWidget().deleteLater()
         self.setup_ui()
 
-class ManageProjects(QMainWindow):
+    def delete_project(self, project: Project):
+        item, ok = QInputDialog.getItem(self, "Delete Project", f"Are you sure you want to delete the project '{project.name}'?", ["Yes", "No"])
+        if ok and item == "Yes":
+            projects.remove(project)
+            save_projects(projects)
+            self.refresh_ui()
+
+class ManageProject(QMainWindow):
     def __init__(self, project: Project):
         super().__init__()
-        self.project = project
-        self.setWindowTitle(f"Project tasks for {project.name}")
-        self.setWindowIcon(QIcon("icon.png"))
-        self.setGeometry(200, 200, 600, 400)
+        self.project: Project = project
+        self.setWindowTitle(f"Managing {project.name}")
+        self.setWindowIcon(icon)
         self.setStyleSheet(style_sheet(1))
-
+        self.setGeometry(0, 0, 800, 600)
         self.setup_ui()
+
     def setup_ui(self):
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
-        layout = QVBoxLayout(central_widget)
+        self.layout = QVBoxLayout(central_widget)
+        horizontal_layout = QHBoxLayout()
 
         back_button = QPushButton("Back")
-        back_button.setStyleSheet(style_sheet(2))
         back_button.clicked.connect(self.close)
-        layout.addWidget(back_button)
+        back_button.setStyleSheet(style_sheet(2))
+        horizontal_layout.addWidget(back_button)
 
-        add_task_button = QPushButton("Add new task")
+        add_task_button = QPushButton("Add Task")
+        add_task_button.clicked.connect(lambda: self.add_task(self.project))
         add_task_button.setStyleSheet(style_sheet(2))
-        add_task_button.clicked.connect(self.add_task)
-        layout.addWidget(add_task_button)
+        horizontal_layout.addWidget(add_task_button)
 
-        for task in self.project.tasks:
-            task_layout = QHBoxLayout()
+        self.layout.addLayout(horizontal_layout)
 
-            task_label = QLabel(task)
-            task_label.setStyleSheet("font-weight: bold;")
-            task_layout.addWidget(task_label)
+        self.task_rows = []  # Keep references to checkboxes and buttons
 
-            remove_task_button = QPushButton("Remove Task")
-            remove_task_button.setStyleSheet(style_sheet(2))
-            remove_task_button.clicked.connect(lambda _, t=task: self.remove_task(t))
-            task_layout.addWidget(remove_task_button)
+        self.populate_tasks()
 
-            layout.addLayout(task_layout)
+    def populate_tasks(self):
+        # Remove all widgets except the first (the button row)
+        while self.layout.count() > 1:
+            item = self.layout.takeAt(1)
+            widget = item.widget()
+            if widget is not None:
+                widget.deleteLater()
+            else:
+                sublayout = item.layout()
+                if sublayout is not None:
+                    while sublayout.count():
+                        subitem = sublayout.takeAt(0)
+                        subwidget = subitem.widget()
+                        if subwidget is not None:
+                            subwidget.deleteLater()
 
-    def add_task(self):
-        task_name, ok = QInputDialog.getText(self, "Add Task", "Enter the task you would like to add:")
-        if not ok or not task_name:
-            return
-        self.project.tasks.append(task_name)
-        save_projects(projects)
-        self.setup_ui()
+        self.task_rows.clear()
 
-    def remove_task(self, task: str):
-        if not task:
-            return
-        if task not in self.project.tasks:
-            print("Task not found.")
-            return
-        
-        self.project.tasks.remove(task)
-        save_projects(projects)
-        self.setup_ui()
+        if not self.project.tasks:
+            no_tasks_label = QLabel("No tasks in this project.")
+            no_tasks_label.setAlignment(Qt.AlignCenter)
+            self.layout.addWidget(no_tasks_label)
+        else:
+            for task in self.project.tasks:
+                task_layout = QHBoxLayout()
+                task_checkbox = QCheckBox(task.name)
+                task_checkbox.setChecked(task.completed)
+                task_layout.addWidget(task_checkbox)
+
+                remove_task_button = QPushButton("Remove Task")
+                remove_task_button.setStyleSheet(style_sheet(2))
+                remove_task_button.setVisible(task.completed)
+                remove_task_button.clicked.connect(lambda _, t=task: self.remove_task(t))
+                task_layout.addWidget(remove_task_button)
+
+                def make_checkbox_handler(task, button):
+                    def handler(state):
+                        task.completed = (state == Qt.Checked)
+                        button.setVisible(task.completed)
+                        save_projects(projects)
+                    return handler
+
+                task_checkbox.stateChanged.connect(make_checkbox_handler(task, remove_task_button))
+
+                self.layout.addLayout(task_layout)
+                self.task_rows.append((task_checkbox, remove_task_button))
+
+        self.layout.addStretch()
+
+    def add_task(self, project: Project):
+        task_name, ok = QInputDialog.getText(self, "Add Task", "Enter task name:")
+        if ok and task_name.strip():
+            project.tasks.append(Task(name=task_name.strip()))
+            save_projects(projects)
+            self.populate_tasks()
+
+    def remove_task(self, task: Task):
+        item, ok = QInputDialog.getItem(self, "Remove Task", f"Are you sure you want to remove the task '{task.name}'?", ["Yes", "No"])
+        if ok and item == "Yes":
+            self.project.tasks.remove(task)
+            save_projects(projects)
+            self.populate_tasks()
 
 if __name__ == "__main__":
-    app = QApplication([])
-    window = MainWindow()
-    window.show()
-    app.exec()
+    main_window = MainWindow()
+    main_window.show()
+    sys.exit(app.exec())
