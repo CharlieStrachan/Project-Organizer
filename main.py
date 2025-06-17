@@ -89,16 +89,35 @@ def style_sheet(sheet):
         }
         
         QCheckBox {
-            min-height: 30px;
+            background-color: #343A40;
+            border-radius: 5px;
+            padding: 5px;
             font-size: 18px;
         }
-
+        
         """
     elif sheet == 2:
         return """
         QPushButton {
             height: 50px;
             font-size: 18px;
+        }
+        """
+    elif sheet == 3:
+        return """
+        QCheckBox QPushButton {
+            background-color: #343A40;
+            border-radius: 5px;
+            padding: 5px;
+            font-size: 18px;
+        }
+        
+        QPushButton:hover {
+            background-color: #495057;
+        }
+        
+        QCheckBox:hover {
+            background-color: #495057;
         }
         """
     else:
@@ -245,72 +264,50 @@ class ManageProject(QMainWindow):
 
         self.layout.addLayout(horizontal_layout)
 
-        self.task_rows = []  # Keep references to checkboxes and buttons
-
-        self.populate_tasks()
-
-    def populate_tasks(self):
-        # Remove all widgets except the first (the button row)
-        while self.layout.count() > 1:
-            item = self.layout.takeAt(1)
-            widget = item.widget()
-            if widget is not None:
-                widget.deleteLater()
-            else:
-                sublayout = item.layout()
-                if sublayout is not None:
-                    while sublayout.count():
-                        subitem = sublayout.takeAt(0)
-                        subwidget = subitem.widget()
-                        if subwidget is not None:
-                            subwidget.deleteLater()
-
-        self.task_rows.clear()
-
         if not self.project.tasks:
-            no_tasks_label = QLabel("No tasks in this project.")
+            no_tasks_label = QLabel(f"No tasks for {self.project.name}.")
             no_tasks_label.setAlignment(Qt.AlignCenter)
             self.layout.addWidget(no_tasks_label)
-        else:
-            for task in self.project.tasks:
-                task_layout = QHBoxLayout()
-                task_checkbox = QCheckBox(task.name)
-                task_checkbox.setChecked(task.completed)
-                task_layout.addWidget(task_checkbox)
-
-                remove_task_button = QPushButton("Remove Task")
-                remove_task_button.setStyleSheet(style_sheet(2))
-                remove_task_button.setVisible(task.completed)
-                remove_task_button.clicked.connect(lambda _, t=task: self.remove_task(t))
-                task_layout.addWidget(remove_task_button)
-
-                def make_checkbox_handler(task, button):
-                    def handler(state):
-                        task.completed = (state == Qt.Checked)
-                        button.setVisible(task.completed)
-                        save_projects(projects)
-                    return handler
-
-                task_checkbox.stateChanged.connect(make_checkbox_handler(task, remove_task_button))
-
-                self.layout.addLayout(task_layout)
-                self.task_rows.append((task_checkbox, remove_task_button))
-
+            return
+        
+        for task in self.project.tasks:
+            task_layout = QHBoxLayout()
+            
+            task_checkbox = QCheckBox(task.name)
+            task_checkbox.setChecked(task.completed)
+            task_checkbox.stateChanged.connect(lambda state, t=task: self.toggle_task_completion(t, state))
+            task_checkbox.setStyleSheet(style_sheet(3))
+            task_checkbox.setFixedHeight(30)
+            task_layout.addWidget(task_checkbox)
+            
+            delete_task_button = QPushButton("Remove Task")
+            delete_task_button.clicked.connect(lambda _, t=task: self.remove_task(t))
+            delete_task_button.setStyleSheet(style_sheet(3))
+            delete_task_button.setFixedHeight(30)
+            task_layout.addWidget(delete_task_button)
+            
+            self.layout.addLayout(task_layout)
         self.layout.addStretch()
-
+    
     def add_task(self, project: Project):
         task_name, ok = QInputDialog.getText(self, "Add Task", "Enter task name:")
-        if ok and task_name.strip():
-            project.tasks.append(Task(name=task_name.strip()))
+        if ok and task_name:
+            project.tasks.append(Task(name=task_name))
             save_projects(projects)
-            self.populate_tasks()
-
+            self.refresh_ui()
+    
     def remove_task(self, task: Task):
-        item, ok = QInputDialog.getItem(self, "Remove Task", f"Are you sure you want to remove the task '{task.name}'?", ["Yes", "No"])
-        if ok and item == "Yes":
-            self.project.tasks.remove(task)
-            save_projects(projects)
-            self.populate_tasks()
+        self.project.tasks.remove(task)
+        save_projects(projects)
+        self.refresh_ui()
+    
+    def toggle_task_completion(self, task: Task, state):
+        task.completed = (state == Qt.CheckState.Checked.value)
+        save_projects(projects)
+    
+    def refresh_ui(self):
+        self.centralWidget().deleteLater()
+        self.setup_ui()
 
 if __name__ == "__main__":
     main_window = MainWindow()
