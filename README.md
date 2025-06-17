@@ -1,4 +1,4 @@
-# <img src="https://github.com/user-attachments/assets/bdebc656-0c79-4f64-8300-b63a1a4ca958" alt="icon" width="24"> Project Organizer
+# <img src="https://github.com/user-attachments/assets/bdebc656-0c79-4f64-8300-b63a1a4ca958" alt="icon" width="30"> Project Organizer
 
 A simple project organizer app that helps you manage to-do lists for various different projects. Made with the PySide6 Python library.
 
