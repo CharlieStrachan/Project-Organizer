@@ -89,34 +89,34 @@ def style_sheet(sheet):
         # General style
         return f"""
         QMainWindow {{
-            background-color: {background_color};
-            color: {foreground_color};
+            background-color: {BACKGROUND_COLOR};
+            color: {FOREGROUND_COLOR};
             font-family: Arial, sans-serif;
             font-size: 15px;
         }}
                 
         QWidget {{
-            background-color: {background_color};
-            color: {foreground_color};
+            background-color: {BACKGROUND_COLOR};
+            color: {FOREGROUND_COLOR};
         }}
         
         QLineEdit, QTextEdit {{
-            background-color: {items_color};
+            background-color: {ITEMS_COLOR};
             border-radius: 5px;
             padding: 5px;
         }}
         
         QPushButton {{
-            background-color: {items_color};
+            background-color: {ITEMS_COLOR};
             border-radius: 5px;
         }}
         
         QPushButton:hover{{
-            background-color: {items_hover_color};
+            background-color: {ITEMS_HOVER_COLOR};
         }}
         
         QCheckBox {{
-            background-color: {items_color};
+            background-color: {ITEMS_COLOR};
             border-radius: 5px;
             padding: 5px;
             font-size: 18px;
@@ -133,25 +133,25 @@ def style_sheet(sheet):
         # Style for checkboxes and buttons inside the manage project window
         return f"""
         QCheckBox {{
-            background-color: {items_color};
+            background-color: {ITEMS_COLOR};
             border-radius: 5px;
             padding: 5px;
             font-size: 18px;
         }}
         
         QPushButton {{
-            background-color: {items_color};
+            background-color: {ITEMS_COLOR};
             border-radius: 5px;
             padding: 5px;
             font-size: 18px;
         }}
         
         QPushButton:hover {{
-            background-color: {items_hover_color};
+            background-color: {ITEMS_HOVER_COLOR};
         }}
         
         QCheckBox:hover {{
-            background-color: {items_hover_color};
+            background-color: {ITEMS_HOVER_COLOR};
         }}
         """
     else:
