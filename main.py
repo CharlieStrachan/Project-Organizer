@@ -58,6 +58,12 @@ def save_projects(projects, filename="projects.json"):
     with open(filename, "w") as file:
         json.dump([project_to_dict(proj) for proj in projects], file, indent=4)
 
+# Define global variables for colors and styles
+background_color = "#212529"
+foreground_color = "#FFFFFF"
+items_color = "#343A40"
+items_hover_color = "#495057"
+
 # Declare global variables for icon and font
 icon = QIcon("icon.png")
 font = QFont("Arial", 14)
@@ -69,75 +75,72 @@ projects = load_projects()
 def style_sheet(sheet):
     if sheet == 1:
         # General style
-        return """
-        QMainWindow {
-            background-color: #212529;
-            color: white;
+        return f"""
+        QMainWindow {{
+            background-color: {background_color};
+            color: {foreground_color};
             font-family: Arial, sans-serif;
             font-size: 15px;
-        }
+        }}
                 
-        QWidget {
-            background-color: #212529;
-            color: white;
-        }
+        QWidget {{
+            background-color: {background_color};
+            color: {foreground_color};
+        }}
         
-        QLineEdit, QTextEdit {
-            background-color: #343A40;
+        QLineEdit, QTextEdit {{
+            background-color: {items_color};
             border-radius: 5px;
             padding: 5px;
-        }
+        }}
         
-        QPushButton {
-            background-color: #343A40;
+        QPushButton {{
+            background-color: {items_color};
             border-radius: 5px;
-            font-family: Arial, sans-serif;
-        }
+        }}
         
-        QPushButton:hover{
-            background-color: #495057;
-        }
+        QPushButton:hover{{
+            background-color: {items_hover_color};
+        }}
         
-        QCheckBox {
-            background-color: #343A40;
+        QCheckBox {{
+            background-color: {items_color};
             border-radius: 5px;
             padding: 5px;
             font-size: 18px;
-        }
-        
+        }}
         """
     elif sheet == 2:
         # Larger buttons style
         return """
         QPushButton {
             height: 50px;
-            font-size: 18px;
         }
         """
     elif sheet == 3:
         # Style for checkboxes and buttons inside the manage project window
-        return """
-        QCheckBox {
-            background-color: #343A40;
+        return f"""
+        QCheckBox {{
+            background-color: {items_color};
             border-radius: 5px;
             padding: 5px;
             font-size: 18px;
-        }
+        }}
         
-        QPushButton {
-            background-color: #343A40;
+        QPushButton {{
+            background-color: {items_color};
             border-radius: 5px;
             padding: 5px;
             font-size: 18px;
-        }
+        }}
         
-        QPushButton:hover {
-            background-color: #495057;
-        }
+        QPushButton:hover {{
+            background-color: {items_hover_color};
+        }}
         
-        QCheckBox:hover {
-            background-color: #495057;
-        }
+        QCheckBox:hover {{
+            background-color: {items_hover_color};
+        }}
         """
     else:
         return """"""
@@ -149,6 +152,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("Project Manager")
         self.setWindowIcon(icon)
+        self.setFont(font)
         self.setStyleSheet(style_sheet(1))
         self.setGeometry(100, 100, 800, 600)
         self.setup_ui()
@@ -306,6 +310,7 @@ class ManageProject(QMainWindow):
         self.project: Project = project
         self.setWindowTitle(f"Managing {project.name}")
         self.setWindowIcon(icon)
+        self.setFont(font)
         self.setStyleSheet(style_sheet(1))
         self.setGeometry(0, 0, 800, 600)
         self.setup_ui()
