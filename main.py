@@ -170,13 +170,6 @@ class MainWindow(QMainWindow):
         add_project_button.clicked.connect(lambda: self.edit_project_details(Project(name="", description=""), mode="add"))
         add_project_button.setStyleSheet(style_sheet(2))
         horizontal_layout.addWidget(add_project_button, alignment=Qt.AlignTop)
-        
-        if projects:       
-            # If there are projects, add a button to clear them     
-            clear_projects_button = QPushButton("Clear Projects")
-            clear_projects_button.clicked.connect(lambda: self.clear_projects())
-            clear_projects_button.setStyleSheet(style_sheet(2))
-            horizontal_layout.addWidget(clear_projects_button, alignment=Qt.AlignTop)
 
         layout.addLayout(horizontal_layout)
         
@@ -184,12 +177,20 @@ class MainWindow(QMainWindow):
             # If there are no projects, display a message
             no_projects_label = QLabel("No current projects.")
             no_projects_label.setAlignment(Qt.AlignCenter)
-            layout.addWidget(no_projects_label)
-            layout.addStretch()
+            layout.addStretch(1)
+            layout.addWidget(no_projects_label, alignment=Qt.AlignCenter)
+            layout.addStretch(1)
             return
         else:
-            # If there are projects, display them
+            # If there are projects, add a button to clear them     
+            clear_projects_button = QPushButton("Clear Projects")
+            clear_projects_button.clicked.connect(lambda: self.clear_projects())
+            clear_projects_button.setStyleSheet(style_sheet(2))
+            horizontal_layout.addWidget(clear_projects_button, alignment=Qt.AlignTop)
+            
+            # Add three buttons to edit the project details, delete the project, and manage the tasks for each project
             for project in projects:
+
                 horizontal_layout = QHBoxLayout()
                 
                 # Create a button for each project that opens a window to manage the projects tasks
