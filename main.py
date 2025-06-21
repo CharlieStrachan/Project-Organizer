@@ -49,23 +49,35 @@ def load_projects(filename="projects.json"):
 
 # Save projects to a JSON file
 def save_projects(projects, filename="projects.json"):
-    def project_to_dict(proj):
-        return {
-            "name": proj.name,
-            "description": proj.description,
-            "tasks": [task.__dict__ for task in proj.tasks]
-        }
-    with open(filename, "w") as file:
-        json.dump([project_to_dict(proj) for proj in projects], file, indent=4)
+    try:
+        def project_to_dict(proj):
+            return {
+                "name": proj.name,
+                "description": proj.description,
+                "tasks": [task.__dict__ for task in proj.tasks]
+            }
+        with open(filename, "w") as file:
+            json.dump([project_to_dict(proj) for proj in projects], file, indent=4)
+    except (IOError, OSError) as e:
+        print(f"Error saving projects: {e}")
+        return False
+    return True
 
 # Define global variables for colors and styles
-background_color = "#212529"
-foreground_color = "#FFFFFF"
-items_color = "#343A40"
-items_hover_color = "#495057"
+BACKGROUND_COLOR = "#212529"
+FOREGROUND_COLOR = "#FFFFFF"
+ITEMS_COLOR = "#343A40"
+ITEMS_HOVER_COLOR = "#495057"
 
-# Declare global variables for icon and font
-icon = QIcon("icon.png")
+# Define global variables for icon and font
+
+# Attempt to load an icon, if it fails, use a default icon
+try:
+    icon = QIcon("icon.png")
+except:
+    icon = QIcon()
+
+# Set the font for the application as Arial with size 14
 font = QFont("Arial", 14)
 
 # Load existing projects
@@ -292,7 +304,8 @@ class MainWindow(QMainWindow):
 
     # Refresh the UI after adding, editing, or deleting a project
     def refresh_ui(self):
-        self.centralWidget().deleteLater()
+        if hasattr(self, 'centralWidget') and self.centralWidget():
+            self.centralWidget().setParent(None)
         self.setup_ui()
 
     # Function to delete a project
