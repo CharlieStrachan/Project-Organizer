@@ -63,22 +63,14 @@ def save_projects(projects, filename="projects.json"):
         return False
     return True
 
-# Define global variables for colors and styles
-BACKGROUND_COLOR = "#212529"
-FOREGROUND_COLOR = "#FFFFFF"
-ITEMS_COLOR = "#343A40"
-ITEMS_HOVER_COLOR = "#495057"
+# Define global color variables for the application
+BACKGROUND_COLOR, FOREGROUND_COLOR, ITEMS_COLOR, ITEMS_HOVER_COLOR = "#212529", "#FFFFFF", "#343A40", "#495057"
 
-# Define global variables for icon and font
-
-# Attempt to load an icon, if it fails, use a default icon
+# Load the icon for the application
 try:
     icon = QIcon("icon.png")
 except:
     icon = QIcon()
-
-# Set the font for the application as Arial with size 14
-font = QFont("Arial", 14)
 
 # Load existing projects
 projects = load_projects()
@@ -92,23 +84,29 @@ def style_sheet(sheet):
             background-color: {BACKGROUND_COLOR};
             color: {FOREGROUND_COLOR};
             font-family: Arial, sans-serif;
-            font-size: 15px;
+            font-size: 18px;
         }}
-                
+            
         QWidget {{
             background-color: {BACKGROUND_COLOR};
             color: {FOREGROUND_COLOR};
+            font-family: Arial, sans-serif;
+            font-size: 18px;
         }}
         
         QLineEdit, QTextEdit {{
             background-color: {ITEMS_COLOR};
             border-radius: 5px;
             padding: 5px;
+            font-family: Arial, sans-serif;
+            font-size: 18px;
         }}
         
         QPushButton {{
             background-color: {ITEMS_COLOR};
             border-radius: 5px;
+            font-family: Arial, sans-serif;
+            font-size: 18px;
         }}
         
         QPushButton:hover{{
@@ -119,6 +117,12 @@ def style_sheet(sheet):
             background-color: {ITEMS_COLOR};
             border-radius: 5px;
             padding: 5px;
+            font-family: Arial, sans-serif;
+            font-size: 18px;
+        }}
+        
+        QLabel {{
+            font-family: Arial, sans-serif;
             font-size: 18px;
         }}
         """
@@ -136,14 +140,12 @@ def style_sheet(sheet):
             background-color: {ITEMS_COLOR};
             border-radius: 5px;
             padding: 5px;
-            font-size: 18px;
         }}
         
         QPushButton {{
             background-color: {ITEMS_COLOR};
             border-radius: 5px;
             padding: 5px;
-            font-size: 18px;
         }}
         
         QPushButton:hover {{
@@ -164,7 +166,6 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("Project Manager")
         self.setWindowIcon(icon)
-        self.setFont(font)
         self.setStyleSheet(style_sheet(1))
         self.setGeometry(100, 100, 800, 600)
         self.setup_ui()
@@ -328,7 +329,6 @@ class ManageProject(QMainWindow):
         self.project: Project = project
         self.setWindowTitle(f"Managing {project.name}")
         self.setWindowIcon(icon)
-        self.setFont(font)
         self.setStyleSheet(style_sheet(1))
         self.setGeometry(0, 0, 800, 600)
         self.setup_ui()
