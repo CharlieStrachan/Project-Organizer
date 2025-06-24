@@ -432,7 +432,7 @@ class ManageProject(QMainWindow):
             # If it does, show a warning message and return
             QMessageBox.warning(self, "Warning", "Task name already exists.")
             return
-        if ok and task_name and task_name:
+        if ok and task_name:
             # Calculate the priority for the new task (lowest priority by default)
             new_priority = len(project.tasks) + 1
             
@@ -466,7 +466,11 @@ class ManageProject(QMainWindow):
         # Prompt message and title based on the mode
         prompt_title = "Change Task Priority"
         prompt = "Select new priority (lower number = higher priority)"
+        
         if mode == "add":
+            # If there is no other tasks, dont prompt for priority
+            if len(self.project.tasks) == 1:
+                return
             prompt_title = "Task Priority"
             prompt = "Select priority for task (lower number = higher priority)"
 
