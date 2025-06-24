@@ -20,6 +20,7 @@ app = QApplication(sys.argv)
 class Task:
     name: str
     completed: bool = False
+    priority: int = 999
 
 @dataclass
 class Project:
@@ -381,9 +382,20 @@ class ManageProject(QMainWindow):
             self.layout.addWidget(no_tasks_label)
             return
         
+        # Sort tasks by priority (lowest number = highest priority)
+        self.project.tasks.sort(key=lambda t: t.priority)
+        
         for task in self.project.tasks:
-            # For each task, create a horizontal layout with a checkbox and a button to remove the task
+            # For each task, create a horizontal layout with priority, checkbox and buttons
             task_layout = QHBoxLayout()
+            
+            # Create a priority label/button
+            priority_button = QPushButton(f"#{task.priority}")
+            priority_button.clicked.connect(lambda _, t=task: self.change_task_priority(t))
+            priority_button.setStyleSheet(style_sheet(3))
+            priority_button.setFixedWidth(50)
+            priority_button.setFixedHeight(30)
+            task_layout.addWidget(priority_button)
             
             # Create a checkbox for the task
             task_checkbox = QCheckBox(task.name)
@@ -415,10 +427,22 @@ class ManageProject(QMainWindow):
     def add_task(self, project: Project):
         task_name, ok = QInputDialog.getText(self, "Add Task", "Enter task name:")
         if ok and task_name:
-            project.tasks.append(Task(name=task_name))
+            # Calculate the priority for the new task (lowest priority by default)
+            new_priority = len(project.tasks) + 1
+            
+            # Create and add the new task
+            project.tasks.append(Task(name=task_name, priority=new_priority))
             save_projects(projects)
-            self.refresh_ui()
-    
+        elif not ok:
+            return
+        # Check if the task name already exists
+        if task_name in [t.name for t in project.tasks]:
+            # If it does, show a warning message
+            QMessageBox.warning(self, "Warning", "Task name already exists.")
+            return
+        self.change_task_priority(project.tasks[-1], mode="add")
+        self.refresh_ui()
+        
     # Function to remove a task from the project    
     def remove_task(self, task: Task):
         self.project.tasks.remove(task)
@@ -434,6 +458,54 @@ class ManageProject(QMainWindow):
     def refresh_ui(self):
         self.centralWidget().deleteLater()
         self.setup_ui()
+
+    # Function to change or add the priority of a task depending on the mode (edit or add)
+    def change_task_priority(self, task: Task, mode="edit"):
+        # Prompt message and title based on the mode
+        prompt_title = "Change Task Priority"
+        prompt = "Select new priority (lower number = higher priority)"
+        if mode == "add":
+            prompt_title = "Task Priority"
+            prompt = "Select priority for task (lower number = higher priority)"
+
+        # Get the current number of tasks
+        num_tasks = len(self.project.tasks)
+        
+        # Create a list of priority options from 1 to num_tasks
+        priority_options = [str(i) for i in range(1, num_tasks + 1)]
+        
+        # Show dialog to select priority
+        priority, ok = QInputDialog.getItem(
+            self,
+            prompt_title,
+            prompt,
+            priority_options,
+            min(task.priority - 1, num_tasks - 1)  # Select current priority in the list
+        )
+        
+        if ok and priority:
+            new_priority = int(priority)
+            old_priority = task.priority
+            
+            # Update priorities of other tasks to maintain consistency
+            if new_priority != old_priority:
+                # If moving to a higher priority (lower number)
+                if new_priority < old_priority:
+                    for t in self.project.tasks:
+                        if t != task and new_priority <= t.priority < old_priority:
+                            t.priority += 1
+                # If moving to a lower priority (higher number)
+                else:
+                    for t in self.project.tasks:
+                        if t != task and old_priority < t.priority <= new_priority:
+                            t.priority -= 1
+            
+                # Set the new priority for this task
+                task.priority = new_priority
+                
+                # Save and refresh
+                save_projects(projects)
+                self.refresh_ui()
 
 # Main function to create and show the main window
 def main():
