@@ -4,7 +4,7 @@ from PySide6.QtWidgets import ( # type: ignore
     QTextEdit, QInputDialog, QWidget, QLabel, QCheckBox, QDialog, QMessageBox
 ) # type: ignore
 from PySide6.QtCore import Qt # type: ignore
-from PySide6.QtGui import QIcon, QFont # type: ignore
+from PySide6.QtGui import QIcon # type: ignore
 
 # Import necessary Python modules
 from dataclasses import dataclass, field
