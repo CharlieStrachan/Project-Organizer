@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 import sys
 import json
 
+# Create the application instance 
 app = QApplication(sys.argv)
 
 # Define data classes for Task and Project
@@ -426,19 +427,20 @@ class ManageProject(QMainWindow):
     # Function to add a new task to the project
     def add_task(self, project: Project):
         task_name, ok = QInputDialog.getText(self, "Add Task", "Enter task name:")
-        if ok and task_name:
+        # Check if the task name already exists
+        if task_name in [t.name for t in project.tasks]:
+            # If it does, show a warning message and return
+            QMessageBox.warning(self, "Warning", "Task name already exists.")
+            return
+        if ok and task_name and task_name:
             # Calculate the priority for the new task (lowest priority by default)
             new_priority = len(project.tasks) + 1
             
             # Create and add the new task
             project.tasks.append(Task(name=task_name, priority=new_priority))
             save_projects(projects)
-        elif not ok:
-            return
-        # Check if the task name already exists
-        if task_name in [t.name for t in project.tasks]:
-            # If it does, show a warning message
-            QMessageBox.warning(self, "Warning", "Task name already exists.")
+        else:
+            # If the user did not enter a task name or cancelled, do not add the task and return
             return
         self.change_task_priority(project.tasks[-1], mode="add")
         self.refresh_ui()
