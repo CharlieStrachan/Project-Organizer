@@ -21,7 +21,7 @@ app = QApplication(sys.argv)
 class Task:
     name: str
     completed: bool = False
-    priority: int = 999
+    priority: int = 1
 
 @dataclass
 class Project:
@@ -65,101 +65,98 @@ def save_projects(projects, filename="projects.json"):
         return False
     return True
 
-# Define global color variables for the application
-BACKGROUND_COLOR, FOREGROUND_COLOR, ITEMS_COLOR, ITEMS_HOVER_COLOR = "#212529", "#FFFFFF", "#343A40", "#495057"
-
-# Load the icon for the application
-try:
-    icon = QIcon("icon.png")
-except:
-    icon = QIcon()
-
 # Load existing projects
 projects = load_projects()
 
-# Style sheet
-def style_sheet(sheet):
-    if sheet == 1:
-        # General style
-        return f"""
-        QMainWindow {{
-            background-color: {BACKGROUND_COLOR};
-            color: {FOREGROUND_COLOR};
-            font-family: Arial, sans-serif;
-            font-size: 18px;
-        }}
+# Class for styling the application
+class Style:
+    def __init__(self):
+        # Define color constants for the application
+        self.BACKGROUND_COLOR, self.FOREGROUND_COLOR, self.ITEMS_COLOR, self.ITEMS_HOVER_COLOR = "#212529", "#FFFFFF", "#343A40", "#495057"
+
+    # Style sheet
+    def style_sheet(self, sheet):
+        if sheet == 1:
+            # General style
+            return f"""
+            QMainWindow {{
+                background-color: {self.BACKGROUND_COLOR};
+                color: {self.FOREGROUND_COLOR};
+                font-family: Arial, sans-serif;
+                font-size: 18px;
+            }}
+                
+            QWidget {{
+                background-color: {self.BACKGROUND_COLOR};
+                color: {self.FOREGROUND_COLOR};
+                font-family: Arial, sans-serif;
+                font-size: 18px;
+            }}
             
-        QWidget {{
-            background-color: {BACKGROUND_COLOR};
-            color: {FOREGROUND_COLOR};
-            font-family: Arial, sans-serif;
-            font-size: 18px;
-        }}
-        
-        QLineEdit, QTextEdit {{
-            background-color: {ITEMS_COLOR};
-            border-radius: 5px;
-            padding: 5px;
-            font-family: Arial, sans-serif;
-            font-size: 18px;
-        }}
-        
-        QPushButton {{
-            background-color: {ITEMS_COLOR};
-            border-radius: 5px;
-            font-family: Arial, sans-serif;
-            font-size: 18px;
-        }}
-        
-        QPushButton:hover{{
-            background-color: {ITEMS_HOVER_COLOR};
-        }}
-        
-        QCheckBox {{
-            background-color: {ITEMS_COLOR};
-            border-radius: 5px;
-            padding: 5px;
-            font-family: Arial, sans-serif;
-            font-size: 18px;
-        }}
-        
-        QLabel {{
-            font-family: Arial, sans-serif;
-            font-size: 18px;
-        }}
-        """
-    elif sheet == 2:
-        # Larger buttons style
-        return """
-        QPushButton {
-            height: 50px;
-        }
-        """
-    elif sheet == 3:
-        # Style for checkboxes and buttons inside the manage project window
-        return f"""
-        QCheckBox {{
-            background-color: {ITEMS_COLOR};
-            border-radius: 5px;
-            padding: 5px;
-        }}
-        
-        QPushButton {{
-            background-color: {ITEMS_COLOR};
-            border-radius: 5px;
-            padding: 5px;
-        }}
-        
-        QPushButton:hover {{
-            background-color: {ITEMS_HOVER_COLOR};
-        }}
-        
-        QCheckBox:hover {{
-            background-color: {ITEMS_HOVER_COLOR};
-        }}
-        """
-    else:
-        return """"""
+            QLineEdit, QTextEdit {{
+                background-color: {self.ITEMS_COLOR};
+                border-radius: 5px;
+                padding: 5px;
+                font-family: Arial, sans-serif;
+                font-size: 18px;
+            }}
+            
+            QPushButton {{
+                background-color: {self.ITEMS_COLOR};
+                border-radius: 5px;
+                font-family: Arial, sans-serif;
+                font-size: 18px;
+            }}
+            
+            QPushButton:hover{{
+                background-color: {self.ITEMS_HOVER_COLOR};
+            }}
+            
+            QCheckBox {{
+                background-color: {self.ITEMS_COLOR};
+                border-radius: 5px;
+                padding: 5px;
+                font-family: Arial, sans-serif;
+                font-size: 18px;
+            }}
+            
+            QLabel {{
+                font-family: Arial, sans-serif;
+                font-size: 18px;
+            }}
+            """
+        elif sheet == 2:
+            # Larger buttons style
+            return """
+            QPushButton {
+                height: 50px;
+            }
+            """
+        elif sheet == 3:
+            # Style for checkboxes and buttons inside the manage project window
+            return f"""
+            QCheckBox {{
+                background-color: {self.ITEMS_COLOR};
+                border-radius: 5px;
+                padding: 5px;
+            }}
+            
+            QPushButton {{
+                background-color: {self.ITEMS_COLOR};
+                border-radius: 5px;
+                padding: 5px;
+            }}
+            
+            QPushButton:hover {{
+                background-color: {self.ITEMS_HOVER_COLOR};
+            }}
+            
+            QCheckBox:hover {{
+                background-color: {self.ITEMS_HOVER_COLOR};
+            }}
+            """
+        else:
+            return """"""
 
 # Class for the main window
 class MainWindow(QMainWindow):
@@ -167,8 +164,8 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Project Manager")
-        self.setWindowIcon(icon)
-        self.setStyleSheet(style_sheet(1))
+        self.setWindowIcon(QIcon("icon.png"))
+        self.setStyleSheet(Style().style_sheet(1))
         self.setGeometry(100, 100, 800, 600)
         self.setup_ui()
 
@@ -183,7 +180,7 @@ class MainWindow(QMainWindow):
         # Add projects button
         add_project_button = QPushButton("Add Project")
         add_project_button.clicked.connect(lambda: self.edit_project_details(Project(name="", description=""), mode="add"))
-        add_project_button.setStyleSheet(style_sheet(2))
+        add_project_button.setStyleSheet(Style().style_sheet(2))
         horizontal_layout.addWidget(add_project_button, alignment=Qt.AlignTop)
 
         # Set a shortcut (Ctrl+N) aswell as a tooltip for the add project button
@@ -204,7 +201,7 @@ class MainWindow(QMainWindow):
             # If there are projects, add a button to clear them     
             clear_projects_button = QPushButton("Clear Projects")
             clear_projects_button.clicked.connect(lambda: self.clear_projects())
-            clear_projects_button.setStyleSheet(style_sheet(2))
+            clear_projects_button.setStyleSheet(Style().style_sheet(2))
             horizontal_layout.addWidget(clear_projects_button, alignment=Qt.AlignTop)
             
             # Add three buttons to edit the project details, delete the project, and manage the tasks for each project
@@ -215,19 +212,19 @@ class MainWindow(QMainWindow):
                 # Create a button for each project that opens a window to manage the projects tasks
                 project_label = QPushButton(project.name)
                 project_label.clicked.connect(lambda _, p=project: ManageProject(p).show())
-                project_label.setStyleSheet(style_sheet(2))
+                project_label.setStyleSheet(Style().style_sheet(2))
                 horizontal_layout.addWidget(project_label)
 
                 # Add a button to edit the projects details
                 edit_details_button = QPushButton("Edit Details")
                 edit_details_button.clicked.connect(lambda _, p=project: self.edit_project_details(p))
-                edit_details_button.setStyleSheet(style_sheet(2))
+                edit_details_button.setStyleSheet(Style().style_sheet(2))
                 horizontal_layout.addWidget(edit_details_button)
 
                 # Add a button to delete the project
                 delete_project_button = QPushButton("Delete")
                 delete_project_button.clicked.connect(lambda _, p=project: self.delete_project(p))
-                delete_project_button.setStyleSheet(style_sheet(2))
+                delete_project_button.setStyleSheet(Style().style_sheet(2))
                 horizontal_layout.addWidget(delete_project_button)
 
                 layout.addLayout(horizontal_layout)
@@ -248,8 +245,8 @@ class MainWindow(QMainWindow):
         # Create a window to edit both project name and description
         dialog = QDialog(self)
         dialog.setWindowTitle("Edit Project Details")
-        dialog.setWindowIcon(icon)
-        dialog.setStyleSheet(style_sheet(1))
+        dialog.setWindowIcon(QIcon("icon.png"))
+        dialog.setStyleSheet(Style().style_sheet(1))
         dialog.setGeometry(300, 300, 400, 200)
         layout = QVBoxLayout(dialog)
 
@@ -334,8 +331,8 @@ class ManageProject(QMainWindow):
         super().__init__()
         self.project: Project = project
         self.setWindowTitle(f"Managing {project.name}")
-        self.setWindowIcon(icon)
-        self.setStyleSheet(style_sheet(1))
+        self.setWindowIcon(QIcon("icon.png"))
+        self.setStyleSheet(Style().style_sheet(1))
         self.setGeometry(0, 0, 800, 600)
         self.setup_ui()
 
@@ -350,13 +347,13 @@ class ManageProject(QMainWindow):
         # Back button to return to the main window
         back_button = QPushButton("Back")
         back_button.clicked.connect(self.close)
-        back_button.setStyleSheet(style_sheet(2))
+        back_button.setStyleSheet(Style().style_sheet(2))
         horizontal_layout.addWidget(back_button)
 
         # Add task button to add a new task to the project
         add_task_button = QPushButton("Add Task")
         add_task_button.clicked.connect(lambda: self.add_task(self.project))
-        add_task_button.setStyleSheet(style_sheet(2))
+        add_task_button.setStyleSheet(Style().style_sheet(2))
         horizontal_layout.addWidget(add_task_button)
         
         # Set a shortcut (Ctrl+N) aswell as a tooltip for the add task button
@@ -371,7 +368,7 @@ class ManageProject(QMainWindow):
             # Add a button to clear all tasks in the project if there are any            
             clear_tasks_button = QPushButton("Clear Tasks")
             clear_tasks_button.clicked.connect(lambda: self.clear_tasks(self.project))
-            clear_tasks_button.setStyleSheet(style_sheet(2))
+            clear_tasks_button.setStyleSheet(Style().style_sheet(2))
             horizontal_layout.addWidget(clear_tasks_button)
 
         self.layout.addLayout(horizontal_layout)
@@ -393,7 +390,7 @@ class ManageProject(QMainWindow):
             # Create a priority label/button
             priority_button = QPushButton(f"#{task.priority}")
             priority_button.clicked.connect(lambda _, t=task: self.change_task_priority(t))
-            priority_button.setStyleSheet(style_sheet(3))
+            priority_button.setStyleSheet(Style().style_sheet(3))
             priority_button.setFixedWidth(50)
             priority_button.setFixedHeight(30)
             task_layout.addWidget(priority_button)
@@ -402,14 +399,14 @@ class ManageProject(QMainWindow):
             task_checkbox = QCheckBox(task.name)
             task_checkbox.setChecked(task.completed)
             task_checkbox.stateChanged.connect(lambda state, t=task: self.toggle_task_completion(t, state))
-            task_checkbox.setStyleSheet(style_sheet(3))
+            task_checkbox.setStyleSheet(Style().style_sheet(3))
             task_checkbox.setFixedHeight(30)
             task_layout.addWidget(task_checkbox)
             
             # Create a button to remove the task
             delete_task_button = QPushButton("Remove Task")
             delete_task_button.clicked.connect(lambda _, t=task: self.remove_task(t))
-            delete_task_button.setStyleSheet(style_sheet(3))
+            delete_task_button.setStyleSheet(Style().style_sheet(3))
             delete_task_button.setFixedHeight(30)
             task_layout.addWidget(delete_task_button)
             
