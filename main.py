@@ -256,21 +256,11 @@ class MainWindow(QMainWindow):
         name_edit.setPlaceholderText("Enter project name here...")
         layout.addWidget(name_edit)
 
-        # If the name is empty, show a warning message
-        if not name_edit:
-            QMessageBox.warning(self, "Warning", "Project name cannot be empty.")
-            return
-
         # Create a text edit for the project description
         desc_edit = QTextEdit()
         desc_edit.setPlainText(project.description)
         desc_edit.setPlaceholderText("Enter project description here...")
         layout.addWidget(desc_edit)
-        
-        # If the description is empty, show a warning message
-        if not desc_edit:
-            QMessageBox.warning(self, "Warning", "Project description cannot be empty.")
-            return
 
         button_layout = QHBoxLayout()
 
@@ -291,10 +281,24 @@ class MainWindow(QMainWindow):
         def on_done():
             name = name_edit.text().strip()
             desc = desc_edit.toPlainText().strip()
-            if not name:
+            
+            # If the name is empty, show a warning message
+            if not name and mode == "add":
+                QMessageBox.warning(self, "Warning", "Project name cannot be empty.")
+                return
+            # If the name already exists, show a warning message
+            if project.name in [p.name for p in projects if p != project] and mode == "add":
+                QMessageBox.warning(self, "Warning", "Project name already exists.")
                 return
             if mode == "edit":
                 project.name = name
+                if not project.name:
+                    QMessageBox.warning(self, "Warning", "Project name cannot be empty.")
+                    return
+                # If the project name already exists, show a warning message
+                if project.name in [p.name for p in projects if p != project]:
+                    QMessageBox.warning(self, "Warning", "Project name already exists.")
+                    return
                 project.description = desc
             else:
                 projects.append(Project(name=name, description=desc))
