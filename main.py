@@ -65,9 +65,6 @@ def save_projects(projects, filename="projects.json"):
         return False
     return True
 
-# Load existing projects
-projects = load_projects()
-
 # Class for styling the application
 class Style:
     def __init__(self):
@@ -163,6 +160,9 @@ class MainWindow(QMainWindow):
     # Initialize the main window with title, icon, style, and geometry, as well initializing the user interface
     def __init__(self):
         super().__init__()
+        # Load existing projects
+        self.projects = load_projects()
+        
         self.setWindowTitle("Project Manager")
         self.setWindowIcon(QIcon("icon.png"))
         self.setStyleSheet(Style().style_sheet(1))
@@ -188,8 +188,8 @@ class MainWindow(QMainWindow):
         add_project_button.setToolTip("Add a new project (Ctrl+N)")
 
         layout.addLayout(horizontal_layout)
-        
-        if not projects:
+
+        if not self.projects:
             # If there are no projects, display a message
             no_projects_label = QLabel("No current projects.")
             no_projects_label.setAlignment(Qt.AlignCenter)
@@ -205,13 +205,13 @@ class MainWindow(QMainWindow):
             horizontal_layout.addWidget(clear_projects_button, alignment=Qt.AlignTop)
             
             # Add three buttons to edit the project details, delete the project, and manage the tasks for each project
-            for project in projects:
+            for project in self.projects:
 
                 horizontal_layout = QHBoxLayout()
                 
                 # Create a button for each project that opens a window to manage the projects tasks
                 project_label = QPushButton(project.name)
-                project_label.clicked.connect(lambda _, p=project: ManageProject(p).show())
+                project_label.clicked.connect(lambda _, p=project: ManageProject(p, self.projects).show())
                 project_label.setStyleSheet(Style().style_sheet(2))
                 horizontal_layout.addWidget(project_label)
 
@@ -235,9 +235,8 @@ class MainWindow(QMainWindow):
     def clear_projects(self):
         item, ok = QInputDialog.getItem(self, "Clear Projects", "Are you sure you want to clear all projects?", ["Yes", "No"])
         if ok and item == "Yes":
-            global projects
-            projects = []
-            save_projects(projects)
+            self.projects = []
+            save_projects(self.projects)
             self.refresh_ui()
     
     # Function to edit project details
@@ -286,7 +285,7 @@ class MainWindow(QMainWindow):
                 QMessageBox.warning(self, "Warning", "Project name cannot be empty.")
                 return
             # If the name already exists, show a warning message
-            if project.name in [p.name for p in projects if p != project] and mode == "add":
+            if project.name in [p.name for p in self.projects if p != project] and mode == "add":
                 QMessageBox.warning(self, "Warning", "Project name already exists.")
                 return
             if mode == "edit":
@@ -295,13 +294,13 @@ class MainWindow(QMainWindow):
                     QMessageBox.warning(self, "Warning", "Project name cannot be empty.")
                     return
                 # If the project name already exists, show a warning message
-                if project.name in [p.name for p in projects if p != project]:
+                if project.name in [p.name for p in self.projects if p != project]:
                     QMessageBox.warning(self, "Warning", "Project name already exists.")
                     return
                 project.description = desc
             else:
-                projects.append(Project(name=name, description=desc))
-            save_projects(projects)
+                self.projects.append(Project(name=name, description=desc))
+            save_projects(self.projects)
             dialog.accept()
             self.refresh_ui()
 
@@ -320,16 +319,17 @@ class MainWindow(QMainWindow):
     def delete_project(self, project: Project):
         item, ok = QInputDialog.getItem(self, "Delete Project", f"Are you sure you want to delete the project '{project.name}'?", ["Yes", "No"])
         if ok and item == "Yes":
-            projects.remove(project)
-            save_projects(projects)
+            self.projects.remove(project)
+            save_projects(self.projects)
             self.refresh_ui()
 
 # Class for managing a specific project
 class ManageProject(QMainWindow):
     # Initialize the project management window with title, icon, style, and geometry aswell as setting up the user interface
-    def __init__(self, project: Project):
+    def __init__(self, project: Project, projects: list[Project]):
         super().__init__()
         self.project: Project = project
+        self.projects = projects
         self.setWindowTitle(f"Managing {project.name}")
         self.setWindowIcon(QIcon("icon.png"))
         self.setStyleSheet(Style().style_sheet(1))
@@ -418,7 +418,7 @@ class ManageProject(QMainWindow):
         item, ok = QInputDialog.getItem(self, "Clear Tasks", f"Are you sure you want to clear all tasks for '{project.name}'?", ["Yes", "No"])
         if ok and item == "Yes":
             project.tasks.clear()
-            save_projects(projects)
+            save_projects(self.projects)
             self.refresh_ui()
     
     # Function to add a new task to the project
@@ -435,7 +435,7 @@ class ManageProject(QMainWindow):
             
             # Create and add the new task
             project.tasks.append(Task(name=task_name, priority=new_priority))
-            save_projects(projects)
+            save_projects(self.projects)
         else:
             # If the user did not enter a task name or cancelled, do not add the task and return
             return
@@ -445,13 +445,13 @@ class ManageProject(QMainWindow):
     # Function to remove a task from the project    
     def remove_task(self, task: Task):
         self.project.tasks.remove(task)
-        save_projects(projects)
+        save_projects(self.projects)
         self.refresh_ui()
     
     # Function to toggle the completion state of a task
     def toggle_task_completion(self, task: Task, state):
         task.completed = (state == Qt.CheckState.Checked.value)
-        save_projects(projects)
+        save_projects(self.projects)
     
     # Refresh the UI after adding, editing, or deleting a task
     def refresh_ui(self):
@@ -507,7 +507,7 @@ class ManageProject(QMainWindow):
                 task.priority = new_priority
                 
                 # Save and refresh
-                save_projects(projects)
+                save_projects(self.projects)
                 self.refresh_ui()
 
 # Main function to create and show the main window
