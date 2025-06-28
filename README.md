@@ -8,6 +8,6 @@ A simple project organizer app that helps you manage to-do lists for various dif
 
 # Shortcuts
 
-* Ctrl+T - Creates new task/project
+* Ctrl+N - Creates a new task/project
 
 * Esc - Goes back to the main window
