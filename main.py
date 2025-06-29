@@ -225,7 +225,7 @@ class MainWindow(QMainWindow):
                 
                 # Create a button for each project that opens a window to manage the projects tasks
                 project_label = QPushButton(project.name)
-                project_label.clicked.connect(lambda _, p=project: ManageProject(p, self.projects).show())
+                project_label.clicked.connect(lambda _, p=project: ManageProject(p, self.projects, self.mode).show())
                 project_label.setStyleSheet(Style(self.mode).style_sheet(2))
                 horizontal_layout.addWidget(project_label)
 
@@ -355,11 +355,12 @@ class MainWindow(QMainWindow):
 
 # Class for managing a specific project
 class ManageProject(QMainWindow):
-    # Initialize the project management window with title, icon, style, and geometry aswell as setting up the user interface
-    def __init__(self, project: Project, projects: list[Project]):
+    # Initialize the project management window with title, icon, style, and geometry as well as setting up the user interface
+    def __init__(self, project: Project, projects: list[Project], mode: int):
         super().__init__()
         self.project: Project = project
         self.projects = projects
+        self.mode = mode
         self.setWindowTitle(f"Managing {project.name}")
         self.setWindowIcon(QIcon("icon.png"))
         self.setStyleSheet(Style(self.mode).style_sheet(1))
@@ -370,8 +371,8 @@ class ManageProject(QMainWindow):
     def setup_ui(self):
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
-        self.layout = QVBoxLayout(central_widget)
-        
+        main_layout = QVBoxLayout(central_widget)
+
         horizontal_layout = QHBoxLayout()
 
         # Back button to return to the main window
@@ -385,29 +386,29 @@ class ManageProject(QMainWindow):
         add_task_button.clicked.connect(lambda: self.add_task(self.project))
         add_task_button.setStyleSheet(Style(self.mode).style_sheet(2))
         horizontal_layout.addWidget(add_task_button)
-        
-        # Set a shortcut (Ctrl+N) aswell as a tooltip for the add task button
+
+        # Set a shortcut (Ctrl+N) as well as a tooltip for the add task button
         add_task_button.setShortcut("Ctrl+N")
         add_task_button.setToolTip("Add a new task to the project (Ctrl+N)")
-        
-        # Set a shortcut (Esc) aswell as a tooltip for the back button
+
+        # Set a shortcut (Esc) as well as a tooltip for the back button
         back_button.setShortcut("Esc")
         back_button.setToolTip("Go back to the main window (Esc)")
-        
+
         if self.project.tasks:
-            # Add a button to clear all tasks in the project if there are any            
+            # Add a button to clear all tasks in the project if there are any
             clear_tasks_button = QPushButton("Clear Tasks")
             clear_tasks_button.clicked.connect(lambda: self.clear_tasks(self.project))
             clear_tasks_button.setStyleSheet(Style(self.mode).style_sheet(2))
             horizontal_layout.addWidget(clear_tasks_button)
 
-        self.layout.addLayout(horizontal_layout)
+        main_layout.addLayout(horizontal_layout)
 
         if not self.project.tasks:
             # If there are no tasks, display a message to say so
             no_tasks_label = QLabel(f"No tasks for {self.project.name}.")
             no_tasks_label.setAlignment(Qt.AlignCenter)
-            self.layout.addWidget(no_tasks_label)
+            main_layout.addWidget(no_tasks_label)
             return
         
         # Sort tasks by priority (lowest number = highest priority)
@@ -440,8 +441,8 @@ class ManageProject(QMainWindow):
             delete_task_button.setFixedHeight(30)
             task_layout.addWidget(delete_task_button)
             
-            self.layout.addLayout(task_layout)
-        self.layout.addStretch()
+            main_layout.addLayout(task_layout)
+        main_layout.addStretch()
     
     # Function to clear all tasks in the project
     def clear_tasks(self, project: Project):
