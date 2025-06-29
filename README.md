@@ -13,3 +13,23 @@ A simple project organizer app that helps you manage to-do lists for various pro
 * Ctrl+M - Changes Dark/Light mode
 
 * Esc - Goes back to the main window when in the managing tasks window
+
+# How to run
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/CharlieStrachan/Project-Organizer.git
+   ```
+2. Navigate to the project directory:
+   ```bash
+   cd Project-Organizer
+   ```
+3. Install the required dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+4. Run the application:
+   ```bash
+   python main.py
+   ```
+
+If you are on Linux, you might need to use `python3` instead of `python`. and `pip3` instead of `pip`.
