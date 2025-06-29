@@ -10,4 +10,6 @@ A simple project organizer app that helps you manage to-do lists for various dif
 
 * Ctrl+N - Creates a new task/project
 
+* Ctrl+M - Changes Dark/Light mode
+
 * Esc - Goes back to the main window
