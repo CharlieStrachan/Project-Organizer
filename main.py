@@ -191,16 +191,20 @@ class MainWindow(QMainWindow):
         add_project_button.setStyleSheet(Style(self.mode).style_sheet(2))
         horizontal_layout.addWidget(add_project_button, alignment=Qt.AlignTop)
 
+        # Set a shortcut (Ctrl+N) aswell as a tooltip for the add project button
+        add_project_button.setShortcut("Ctrl+N")
+        add_project_button.setToolTip("Add a new project (Ctrl+N)")
+
         # Light/Dark mode toggle button
         toggle_mode_button = QPushButton("🌙" if self.mode == 0 else "☀️")
         toggle_mode_button.setStyleSheet(Style(self.mode).style_sheet(2))
         toggle_mode_button.clicked.connect(lambda: self.toggle_mode())
         horizontal_layout.addWidget(toggle_mode_button, alignment=Qt.AlignTop)
-
-        # Set a shortcut (Ctrl+N) aswell as a tooltip for the add project button
-        add_project_button.setShortcut("Ctrl+N")
-        add_project_button.setToolTip("Add a new project (Ctrl+N)")
-
+        
+        # Set a shortcut (Ctrl+M) aswell as a tooltip for the toggle mode button
+        toggle_mode_button.setShortcut("Ctrl+M")
+        toggle_mode_button.setToolTip("Toggle light/dark mode (Ctrl+M)")
+        
         layout.addLayout(horizontal_layout)
 
         if not self.projects:
@@ -381,6 +385,10 @@ class ManageProject(QMainWindow):
         back_button.setStyleSheet(Style(self.mode).style_sheet(2))
         horizontal_layout.addWidget(back_button)
 
+        # Set a shortcut (Esc) as well as a tooltip for the back button
+        back_button.setShortcut("Esc")
+        back_button.setToolTip("Go back to the main window (Esc)")
+
         # Add task button to add a new task to the project
         add_task_button = QPushButton("Add Task")
         add_task_button.clicked.connect(lambda: self.add_task(self.project))
@@ -390,10 +398,6 @@ class ManageProject(QMainWindow):
         # Set a shortcut (Ctrl+N) as well as a tooltip for the add task button
         add_task_button.setShortcut("Ctrl+N")
         add_task_button.setToolTip("Add a new task to the project (Ctrl+N)")
-
-        # Set a shortcut (Esc) as well as a tooltip for the back button
-        back_button.setShortcut("Esc")
-        back_button.setToolTip("Go back to the main window (Esc)")
 
         if self.project.tasks:
             # Add a button to clear all tasks in the project if there are any
