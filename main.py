@@ -13,9 +13,6 @@ from dataclasses import dataclass, field
 import sys
 import json
 
-# Create the application instance 
-app = QApplication(sys.argv)
-
 # Define data classes for Task and Project
 @dataclass
 class Task:
@@ -162,7 +159,7 @@ class Style:
 
 # Class for the main window
 class MainWindow(QMainWindow):
-    # Initialize the main window with title, icon, style, and geometry, as well initializing the user interface
+    # Initialize the main window and set up the user interface
     def __init__(self):
         super().__init__()
         # Load existing projects
@@ -171,6 +168,7 @@ class MainWindow(QMainWindow):
         # Default mode to light mode
         self.mode = 1
 
+        # Set the main window title, icon, style, and geometry
         self.setWindowTitle("Project Manager")
         self.setWindowIcon(QIcon("icon.png"))
         self.setStyleSheet(Style(self.mode).style_sheet(1))
@@ -208,28 +206,33 @@ class MainWindow(QMainWindow):
             # Add stretch to push toggle button to bottom
             layout.addStretch(2)
             
-            # Add toggle mode button at bottom right
+            # Add toggle mode button at bottom right even when no projects
             toggle_layout = QHBoxLayout()
-            toggle_layout.addStretch()
+            toggle_layout.addStretch()  # Push button to the right
             
             # Light/Dark mode toggle button
             toggle_mode_button = QPushButton("🌙" if self.mode == 0 else "☀️")
             toggle_mode_button.setStyleSheet(Style(self.mode).style_sheet(2))
             toggle_mode_button.clicked.connect(lambda: self.toggle_mode())
-            toggle_mode_button.setFixedWidth(120)
-            toggle_mode_button.setShortcut("Ctrl+M")
-            toggle_mode_button.setToolTip("Toggle light/dark mode (Ctrl+M)")
+            toggle_mode_button.setFixedWidth(120)  # Half width of a typical button
+            toggle_mode_button.setShortcut("Ctrl+T")
+            toggle_mode_button.setToolTip("Toggle light/dark mode (Ctrl+T)")
             toggle_layout.addWidget(toggle_mode_button)
             
             layout.addLayout(toggle_layout)
             return
         else:
-            # Add three buttons to edit the project details, delete the project, and manage the tasks for each project
-            clear_projects_button = QPushButton("Clear Projects")
-            clear_projects_button.clicked.connect(lambda: self.clear_projects())
-            clear_projects_button.setStyleSheet(Style(self.mode).style_sheet(2))
-            horizontal_layout.addWidget(clear_projects_button, alignment=Qt.AlignmentFlag.AlignTop)
-            
+            if len(self.projects) > 1:
+                # Add three buttons to edit the project details, delete the project, and manage the tasks for each project
+                clear_projects_button = QPushButton("Clear Projects")
+                clear_projects_button.clicked.connect(lambda: self.clear_projects())
+                clear_projects_button.setStyleSheet(Style(self.mode).style_sheet(2))
+                horizontal_layout.addWidget(clear_projects_button, alignment=Qt.AlignmentFlag.AlignTop)
+                
+                # Set a shortcut (Ctrl+C) as well as a tooltip for the clear projects button
+                clear_projects_button.setShortcut("Ctrl+C")
+                clear_projects_button.setToolTip("Clear all projects (Ctrl+C)")
+
             # Add three buttons to edit the project details, delete the project, and manage the tasks for each project
             for project in self.projects:
 
@@ -423,12 +426,16 @@ class ManageProject(QMainWindow):
         back_button.setShortcut("Esc")
         back_button.setToolTip("Go back to the main window (Esc)")
 
-        if self.project.tasks:
-            # Add a button to clear all tasks in the project if there are any
+        if len(self.project.tasks) > 1:
+            # Add a button to clear all tasks in the project if there are more than 1 tasks
             clear_tasks_button = QPushButton("Clear Tasks")
             clear_tasks_button.clicked.connect(lambda: self.clear_tasks(self.project))
             clear_tasks_button.setStyleSheet(Style(self.mode).style_sheet(2))
             horizontal_layout.addWidget(clear_tasks_button)
+
+            # Set a shortcut (Ctrl+C) as well as a tooltip for the clear tasks button
+            clear_tasks_button.setShortcut("Ctrl+C")
+            clear_tasks_button.setToolTip("Clear all tasks in the project (Ctrl+C)")
 
         main_layout.addLayout(horizontal_layout)
 
@@ -617,6 +624,9 @@ class ManageProject(QMainWindow):
 
 # Main function to create and show the main window
 def main():
+    # Create the application instance 
+    app = QApplication(sys.argv)
+
     # Create and show the main window
     main_window = MainWindow()
     main_window.show()
