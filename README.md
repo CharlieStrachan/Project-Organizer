@@ -1,6 +1,6 @@
 # Project Organizer
 
-A simple project organizer app that helps you manage to-do lists for various projects. Made with the PySide6 Python library.
+A simple project organizer app that helps you manage to-do lists across multiple projects. Made with the PySide6 Python library.
 
 # How to run
 1. Clone the repository:
