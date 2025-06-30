@@ -25,7 +25,9 @@ If you are on Linux, you might need to use `python3` instead of `python`. and `p
 # Shortcuts
 
 * Ctrl+N - Creates a new task/project
-
+  
+* Ctrl+C - Clears all tasks/projects
+  
 * Ctrl+M - Changes Dark/Light mode
 
 * Esc - Goes back to the main window when in the managing tasks window
