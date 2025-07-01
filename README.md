@@ -20,7 +20,7 @@ A simple project organizer app that helps you manage to-do lists across multiple
    python main.py
    ```
 
-If you are on Linux, you might need to use `python3` instead of `python`. and `pip3` instead of `pip`.
+If you are on Linux, you might need to use `python3` instead of `python`.
 
 # Shortcuts
 
