@@ -124,6 +124,16 @@ class Style:
                 font-family: Arial, sans-serif;
                 font-size: 18px;
             }}
+
+            QToolTip {{
+                background-color: {self.ITEMS_COLOR};
+                border: 1px solid {self.ITEMS_HOVER_COLOR};
+                border-radius: 5px;
+                color: {self.FOREGROUND_COLOR};
+                padding: 5px;
+                font-family: Arial, sans-serif;
+                font-size: 18px;
+            }}
             """
         elif sheet == 2:
             # Larger buttons style
