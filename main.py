@@ -1,34 +1,53 @@
-# Import necessary PySide6 modules
-from PySide6.QtWidgets import ( # type: ignore
+from PySide6.QtWidgets import (
     QMainWindow, QApplication, QHBoxLayout, QVBoxLayout, QPushButton, QLineEdit,
     QTextEdit, QInputDialog, QWidget, QLabel, QCheckBox, QDialog, QMessageBox,
     QStackedWidget
-) # type: ignore
-from PySide6.QtCore import Qt, QTimer # type: ignore
-from PySide6.QtGui import QIcon # type: ignore
+)
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QIcon
 
-# Import necessary Python modules
 from dataclasses import dataclass, field
 
-# Import necessary modules for file handling and JSON
 import sys
 import json
 
-# Define data classes for Task and Project
 @dataclass
 class Task:
+    """
+    Class representing a task in a project.
+    Attributes:
+        name (str): The name of the task.
+        completed (bool): Whether the task is completed. Defaults to False.
+        priority (int): The priority of the task, lower number means higher priority. Defaults to 1.
+    """
     name: str
     completed: bool = False
     priority: int = 1
 
 @dataclass
 class Project:
+    """
+    Class representing a project containing multiple tasks.
+    Attributes:
+        name (str): The name of the project.
+        description (str): A description of the project. Defaults to "No description provided."
+        tasks (list[Task]): A list of tasks associated with the project.
+    """
     name: str
     description: str = "No description provided."
     tasks: list[Task] = field(default_factory=list)
 
-# Load projects from a JSON file
-def load_projects(filename="projects.json"):
+def load_projects(filename="projects.json") -> list[Project]:
+    """
+    Load projects from a JSON file.
+    Args:
+        filename (str): The name of the JSON file to load projects from. Defaults to "projects.json".
+    Returns:
+        list[Project]: A list of Project objects loaded from the file. If the file does not exist or is empty, returns an empty list.
+    Raises:
+        FileNotFoundError: If the specified file does not exist.
+        json.JSONDecodeError: If the file contains invalid JSON.
+    """
     try:
         with open(filename, "r") as file:
             data = json.load(file)
@@ -47,10 +66,29 @@ def load_projects(filename="projects.json"):
         print("Error decoding JSON. Starting with an empty project list.")
         return []
 
-# Save projects to a JSON file
-def save_projects(projects, filename="projects.json"):
+def save_projects(projects, filename="projects.json") -> bool:
+    """
+    Save projects to a JSON file.
+    Args:
+        projects (list[Project]): A list of Project objects to save.
+        filename (str): The name of the JSON file to save projects to. Defaults to "projects.json".
+    Returns:
+        bool: True if the projects were saved successfully, False otherwise.
+    Raises:
+        IOError: If there is an error writing to the file.
+        OSError: If there is an error with the file system.
+    This function serializes the list of Project objects to JSON format and writes it to the specified file.
+    """
     try:
-        def project_to_dict(proj):
+        def project_to_dict(proj) -> dict:
+            """
+            Convert a Project object to a dictionary for JSON serialization.
+            Args:
+                proj (Project): The Project object to convert.
+            Returns:
+                dict: A dictionary representation of the Project object.
+            This function is used to ensure that the Project and Task objects can be serialized to JSON.
+            """
             return {
                 "name": proj.name,
                 "description": proj.description,
@@ -63,21 +101,42 @@ def save_projects(projects, filename="projects.json"):
         return False
     return True
 
-# Class for styling the application
 class Style:
-    def __init__(self, mode):
-        # Define color constants for the application
+    """
+    Class to manage the styling of the application.
+    Attributes:
+        BACKGROUND_COLOR (str): The background color of the application.
+        FOREGROUND_COLOR (str): The foreground color of the application.
+        ITEMS_COLOR (str): The color of items in the application.
+        ITEMS_HOVER_COLOR (str): The hover color for items in the application.
+    Methods:
+        __init__(mode): Initializes the style based on the provided mode (0 for dark mode, 1 for light mode).
+        style_sheet(sheet): Returns a string containing the CSS style sheet for the specified sheet.
+    This class allows for easy switching between light and dark modes by changing the color scheme.
+    """
+    def __init__(self, mode) -> None:
+        """
+        Initialize the style based on the provided mode.
+        Args:
+            mode (int): The mode for the style. 0 for dark mode, 1 for light mode.
+        Sets the background, foreground, items, and hover colors based on the mode.
+        """
         if mode == 0:
-            # Dark mode colors
             self.BACKGROUND_COLOR, self.FOREGROUND_COLOR, self.ITEMS_COLOR, self.ITEMS_HOVER_COLOR = "#212529", "#FFFFFF", "#343A40", "#495057"
         elif mode == 1:
-            # Light mode colors
             self.BACKGROUND_COLOR, self.FOREGROUND_COLOR, self.ITEMS_COLOR, self.ITEMS_HOVER_COLOR = "#F8F9FA", "#212529", "#E9ECEF", "#CED4DA"
 
-    # Style sheet
-    def style_sheet(self, sheet):
+    def style_sheet(self, sheet) -> str:
+        """
+        Returns a string containing the CSS style sheet for the specified sheet.
+        Args:
+            sheet (int): The sheet number for which to return the style. 
+                         1 for main window styles, 2 for button styles, 3 for checkbox and button hover styles.
+        Returns:
+            str: A string containing the CSS style sheet for the specified sheet.
+        This method allows for different styles to be applied based on the context of the application.
+        """
         if sheet == 1:
-            # General style
             return f"""
             QMainWindow {{
                 background-color: {self.BACKGROUND_COLOR};
@@ -136,14 +195,12 @@ class Style:
             }}
             """
         elif sheet == 2:
-            # Larger buttons style
             return """
             QPushButton {
                 height: 50px;
             }
             """
         elif sheet == 3:
-            # Style for checkboxes and buttons inside the manage project window
             return f"""
             QCheckBox {{
                 background-color: {self.ITEMS_COLOR};
@@ -168,80 +225,92 @@ class Style:
         else:
             return """"""
 
-# Class for the main window
 class MainWindow(QMainWindow):
-    # Initialize the main window and set up the user interface
-    def __init__(self):
+    """
+    Main window class for the Project Manager application.
+    This class initializes the main window, sets up the UI, and handles user interactions.
+    Attributes:
+        projects (list[Project]): A list of Project objects loaded from the JSON file.
+        mode (int): The current mode of the application (0 for dark mode, 1 for light mode).
+        current_project (Project): The currently selected project.
+        main_view_initialized (bool): Flag to check if the main view has been initialized.
+        project_view_initialized (bool): Flag to check if the project view has been initialized.
+    Methods:
+        __init__(): Initializes the main window and sets up the UI.
+        setup_main_view(): Sets up the main view of the application.
+        setup_project_view(): Sets up the project view for managing tasks.
+        toggle_mode(): Toggles between light and dark mode.
+        clear_projects(): Clears all projects after user confirmation.
+        edit_project_details(project, mode="edit"): Opens a dialog to edit project details.
+        refresh_ui(): Refreshes the UI based on the current view.
+        delete_project(project): Deletes a project after user confirmation.
+        clear_layout(layout): Clears all widgets from a layout.
+        show_project_view(project): Displays the project view for the selected project.
+        show_main_view(): Displays the main view of the application.
+    """
+    def __init__(self) -> None:
+        """
+        Initializes the main window and sets up the UI.
+        Loads projects from the JSON file and sets the initial mode to light mode.
+        """
         super().__init__()
-        # Load existing projects
         self.projects = load_projects()
 
-        # Default mode to light mode
         self.mode = 1
 
-        # Current project being managed (None means we're on the main view)
         self.current_project = None
         
-        # Track if layouts have been set up
         self.main_view_initialized = False
         self.project_view_initialized = False
 
-        # Set the main window title, icon, style, and geometry
         self.setWindowTitle("Project Manager")
         self.setWindowIcon(QIcon("icon.png"))
         self.setStyleSheet(Style(self.mode).style_sheet(1))
         self.setGeometry(100, 100, 800, 600)
         
-        # Create the stacked widget for different views
         self.stacked_widget = QStackedWidget()
         self.setCentralWidget(self.stacked_widget)
         
-        # Create the main view and project management view
         self.main_view = QWidget()
         self.project_view = QWidget()
         
-        # Add views to the stacked widget
         self.stacked_widget.addWidget(self.main_view)
         self.stacked_widget.addWidget(self.project_view)
         
-        # Setup main view initially
         self.setup_main_view()
         
-        # Start with the main view
         self.stacked_widget.setCurrentWidget(self.main_view)
 
-    # Setup the main view (project list)
-    def setup_main_view(self):
-        # Only initialize layout once
+    def setup_main_view(self) -> None:
+        """
+        Sets up the main view of the application.
+        This method initializes the layout, adds buttons for adding projects, and displays the list of current projects.
+        If there are no projects, it displays a message indicating that there are no current projects.
+        """
         if not self.main_view_initialized:
             layout = QVBoxLayout()
             self.main_view.setLayout(layout)
             self.main_view_initialized = True
         else:
-            # Clear existing content
             current_layout = self.main_view.layout()
             self.clear_layout_content(current_layout)
         
-        # Get the layout and cast it properly
         layout = self.main_view.layout()
-        assert isinstance(layout, QVBoxLayout)  # Type hint for the linter
+        assert isinstance(layout, QVBoxLayout)
 
         horizontal_layout = QHBoxLayout()
         
-        # Add projects button
         add_project_button = QPushButton("Add Project")
         add_project_button.clicked.connect(lambda: self.edit_project_details(Project(name="", description=""), mode="add"))
         add_project_button.setStyleSheet(Style(self.mode).style_sheet(2))
         horizontal_layout.addWidget(add_project_button, alignment=Qt.AlignmentFlag.AlignTop)
 
-        # Set a shortcut (Ctrl+N) aswell as a tooltip for the add project button
         add_project_button.setShortcut("Ctrl+N")
         add_project_button.setToolTip("Add a new project (Ctrl+N)")
 
         layout.addLayout(horizontal_layout)
 
         if not self.projects:
-            # If there are no projects, display a message
             no_projects_label = QLabel("No current projects.")
             no_projects_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             layout.addStretch(1)
@@ -249,14 +318,11 @@ class MainWindow(QMainWindow):
             no_projects_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             layout.addStretch(1)
             
-            # Add stretch to push toggle button to bottom
             layout.addStretch(2)
             
-            # Add toggle mode button at bottom right even when no projects
             toggle_layout = QHBoxLayout()
             toggle_layout.addStretch()
             
-            # Light/Dark mode toggle button
             toggle_mode_button = QPushButton("🌙" if self.mode == 0 else "☀️")
             toggle_mode_button.setStyleSheet(Style(self.mode).style_sheet(2))
             toggle_mode_button.clicked.connect(lambda: self.toggle_mode())
@@ -269,34 +335,28 @@ class MainWindow(QMainWindow):
             return
         else:
             if len(self.projects) > 1:
-                # Add three buttons to edit the project details, delete the project, and manage the tasks for each project
                 clear_projects_button = QPushButton("Clear Projects")
                 clear_projects_button.clicked.connect(lambda: self.clear_projects())
                 clear_projects_button.setStyleSheet(Style(self.mode).style_sheet(2))
                 horizontal_layout.addWidget(clear_projects_button, alignment=Qt.AlignmentFlag.AlignTop)
                 
-                # Set a shortcut (Ctrl+C) as well as a tooltip for the clear projects button
                 clear_projects_button.setShortcut("Ctrl+C")
                 clear_projects_button.setToolTip("Clear all projects (Ctrl+C)")
 
-            # Add three buttons to edit the project details, delete the project, and manage the tasks for each project
             for project in self.projects:
 
                 horizontal_layout = QHBoxLayout()
                 
-                # Create a button for each project that opens the project management view
                 project_label = QPushButton(project.name)
                 project_label.clicked.connect(lambda _, p=project: self.show_project_view(p))
                 project_label.setStyleSheet(Style(self.mode).style_sheet(2))
                 horizontal_layout.addWidget(project_label)
 
-                # Add a button to edit the projects details
                 edit_details_button = QPushButton("Edit Details")
                 edit_details_button.clicked.connect(lambda _, p=project: self.edit_project_details(p))
                 edit_details_button.setStyleSheet(Style(self.mode).style_sheet(2))
                 horizontal_layout.addWidget(edit_details_button)
 
-                # Add a button to delete the project
                 delete_project_button = QPushButton("Delete")
                 delete_project_button.clicked.connect(lambda _, p=project: self.delete_project(p))
                 delete_project_button.setStyleSheet(Style(self.mode).style_sheet(2))
@@ -304,14 +364,11 @@ class MainWindow(QMainWindow):
 
                 layout.addLayout(horizontal_layout)
 
-            # Add stretch to push toggle button to bottom
             layout.addStretch()
             
-            # Add toggle mode button at bottom right
             toggle_layout = QHBoxLayout()
             toggle_layout.addStretch()
             
-            # Light/Dark mode toggle button
             toggle_mode_button = QPushButton("🌙" if self.mode == 0 else "☀️")
             toggle_mode_button.setStyleSheet(Style(self.mode).style_sheet(2))
             toggle_mode_button.clicked.connect(lambda: self.toggle_mode())
@@ -322,28 +379,41 @@ class MainWindow(QMainWindow):
             
             layout.addLayout(toggle_layout)
 
-    # Function to toggle between light and dark mode
-    def toggle_mode(self):
-        # Toggle the mode variable
+    def toggle_mode(self) -> None:
+        """
+        Toggles the application mode between light and dark.
+        This method changes the mode attribute and updates the style sheet accordingly.
+        It also refreshes the UI to apply the new style.
+        """
         self.mode = 0 if self.mode == 1 else 1
 
-        # Update the style sheet based on the new mode
         self.setStyleSheet(Style(self.mode).style_sheet(1))
 
-        # Refresh the UI to apply the new style
         self.refresh_ui()
 
-    # Clear projects function
-    def clear_projects(self):
+    def clear_projects(self) -> None:
+        """
+        Clears all projects after user confirmation.
+        This method prompts the user with a confirmation dialog and, if confirmed, clears the projects list,
+        saves the empty list to the JSON file, and refreshes the UI.
+        """
         item, ok = QInputDialog.getItem(self, "Clear Projects", "Are you sure you want to clear all projects?", ["Yes", "No"])
         if ok and item == "Yes":
             self.projects = []
             save_projects(self.projects)
             self.refresh_ui()
     
-    # Function to edit project details
-    def edit_project_details(self, project: Project, mode="edit"):
-        # Create a window to edit both project name and description
+    def edit_project_details(self, project: Project, mode="edit") -> None:
+        """
+        Opens a dialog to edit project details.
+        Args:
+            project (Project): The project to edit. If mode is "add", a new project will be created.
+            mode (str): The mode for editing the project. "edit" for editing an existing project, "add" for creating a new one.
+        This method creates a dialog with fields for the project name and description.
+        If the mode is "add", it allows the user to enter a new project name and description.
+        If the mode is "edit", it pre-fills the fields with the existing project details.
+        It validates the input and updates the project list accordingly.
+        """
         dialog = QDialog(self)
         dialog.setWindowTitle("Edit Project Details")
         dialog.setWindowIcon(QIcon("icon.png"))
@@ -351,12 +421,10 @@ class MainWindow(QMainWindow):
         dialog.setGeometry(300, 300, 400, 200)
         layout = QVBoxLayout(dialog)
 
-        # Create a line edit for the project name
         name_edit = QLineEdit(project.name)
         name_edit.setPlaceholderText("Enter project name here...")
         layout.addWidget(name_edit)
 
-        # Create a text edit for the project description
         desc_edit = QTextEdit()
         desc_edit.setPlainText(project.description)
         desc_edit.setPlaceholderText("Enter project description here...")
@@ -364,29 +432,29 @@ class MainWindow(QMainWindow):
 
         button_layout = QHBoxLayout()
 
-        # Create a cancel button to close the dialog without saving changes
         cancel_button = QPushButton("Cancel")
         button_layout.addWidget(cancel_button)
 
-        # Create a done button to save the changes made
         done_button = QPushButton("Done")
         button_layout.addWidget(done_button)
 
         layout.addLayout(button_layout)
 
-        # If the user clicks the cancel button, close the dialog
         cancel_button.clicked.connect(dialog.close)
 
-        # Function to handle if the user clicks the done button
-        def on_done():
+        def on_done() -> None:
+            """
+            Handles the "Done" button click event.
+            Validates the input fields and updates the project list.
+            If the project name is empty or already exists, it shows a warning message.
+            If the mode is "edit", it updates the existing project; if "add", it creates a new project.
+            """
             name = name_edit.text().strip()
             desc = desc_edit.toPlainText().strip()
             
-            # If the name is empty, show a warning message
             if not name and mode == "add":
                 QMessageBox.warning(self, "Warning", "Project name cannot be empty.")
                 return
-            # If the name already exists, show a warning message
             if project.name in [p.name for p in self.projects if p != project] and mode == "add":
                 QMessageBox.warning(self, "Warning", "Project name already exists.")
                 return
@@ -395,7 +463,6 @@ class MainWindow(QMainWindow):
                 if not project.name:
                     QMessageBox.warning(self, "Warning", "Project name cannot be empty.")
                     return
-                # If the project name already exists, show a warning message
                 if project.name in [p.name for p in self.projects if p != project]:
                     QMessageBox.warning(self, "Warning", "Project name already exists.")
                     return
@@ -406,28 +473,44 @@ class MainWindow(QMainWindow):
             dialog.accept()
             self.refresh_ui()
 
-        # Run the on_done function if the user clicks the done button
         done_button.clicked.connect(on_done)
 
         dialog.exec()
 
-    # Refresh the UI after adding, editing, or deleting a project or task
-    def refresh_ui(self):
+    def refresh_ui(self) -> None:
+        """
+        Refreshes the UI based on the current view.
+        This method checks which view is currently active (main view or project view)
+        and calls the appropriate setup method to update the UI.
+        """
         if self.stacked_widget.currentWidget() == self.main_view:
             self.setup_main_view()
         elif self.stacked_widget.currentWidget() == self.project_view:
             self.setup_project_view()
 
-    # Function to delete a project
-    def delete_project(self, project: Project):
+    def delete_project(self, project: Project) -> None:
+        """
+        Deletes a project after user confirmation.
+        Args:
+            project (Project): The project to delete.
+        This method prompts the user with a confirmation dialog before deleting the project.
+        If the user confirms, it removes the project from the projects list, saves the updated list to the JSON file,
+        and refreshes the UI.
+        """
         item, ok = QInputDialog.getItem(self, "Delete Project", f"Are you sure you want to delete the project '{project.name}'?", ["Yes", "No"])
         if ok and item == "Yes":
             self.projects.remove(project)
             save_projects(self.projects)
             self.refresh_ui()
 
-    # Helper method to clear a layout
-    def clear_layout(self, layout):
+    def clear_layout(self, layout) -> None:
+        """
+        Clears all widgets from a layout.
+        Args:
+            layout (QLayout): The layout to clear.
+        This method iterates through all items in the layout and removes them,
+        setting their parent to None and deleting them to free up resources.
+        """
         if layout is None:
             return
         
@@ -443,8 +526,14 @@ class MainWindow(QMainWindow):
                     if child_layout is not None:
                         self.clear_layout(child_layout)
 
-    # Helper method to clear layout content without deleting the layout
-    def clear_layout_content(self, layout):
+    def clear_layout_content(self, layout) -> None:
+        """
+        Clears all widgets from a layout without deleting the layout itself.
+        Args:
+            layout (QLayout): The layout to clear.
+        This method iterates through all items in the layout and removes them,
+        setting their parent to None and deleting them to free up resources.
+        """
         if layout is None:
             return
         
@@ -460,61 +549,69 @@ class MainWindow(QMainWindow):
                     if child_layout is not None:
                         self.clear_layout_content(child_layout)
 
-    # Show the project management view for a specific project
-    def show_project_view(self, project: Project):
+    def show_project_view(self, project: Project) -> None:
+        """
+        Displays the project view for the selected project.
+        Args:
+            project (Project): The project to display in the project view.
+        This method sets the current project to the selected project, updates the window title,
+        and calls the setup method to initialize the project view.
+        """
         self.current_project = project
         self.setWindowTitle(f"Project Manager - Managing {project.name}")
         self.setup_project_view()
         self.stacked_widget.setCurrentWidget(self.project_view)
 
-    # Show the main view (project list)
-    def show_main_view(self):
+    def show_main_view(self) -> None:
+        """
+        Displays the main view of the application.
+        This method resets the current project to None, updates the window title,
+        and calls the setup method to initialize the main view.
+        """
         self.current_project = None
         self.setWindowTitle("Project Manager")
         self.setup_main_view()
         self.stacked_widget.setCurrentWidget(self.main_view)
 
-    # Setup the project management view
-    def setup_project_view(self):
+    def setup_project_view(self) -> None:
+        """
+        Sets up the project view for managing tasks.
+        This method initializes the layout, adds buttons for adding tasks, clearing tasks,
+        and displays the list of tasks for the current project.
+        If there are no tasks, it displays a message indicating that there are no tasks for the project.
+        """
         if not self.current_project:
             return
             
-        # Only initialize layout once
         if not self.project_view_initialized:
             main_layout = QVBoxLayout()
             self.project_view.setLayout(main_layout)
             self.project_view_initialized = True
         else:
-            # Clear existing content
             current_layout = self.project_view.layout()
             self.clear_layout_content(current_layout)
         
-        # Get the layout and cast it properly
         main_layout = self.project_view.layout()
         assert isinstance(main_layout, QVBoxLayout)
 
         horizontal_layout = QHBoxLayout()
 
-        # Back button to return to the main view
         back_button = QPushButton("Back")
         back_button.clicked.connect(self.show_main_view)
         back_button.setStyleSheet(Style(self.mode).style_sheet(2))
         horizontal_layout.addWidget(back_button)
 
-        # Add task button to add a new task to the project
         add_task_button = QPushButton("Add Task")
         add_task_button.clicked.connect(lambda: self.add_task(self.current_project) if self.current_project else None)
         add_task_button.setStyleSheet(Style(self.mode).style_sheet(2))
         horizontal_layout.addWidget(add_task_button)
 
-        # Set shortcuts and tooltips
         add_task_button.setShortcut("Ctrl+N")
         add_task_button.setToolTip("Add a new task to the project (Ctrl+N)")
         back_button.setShortcut("Esc")
         back_button.setToolTip("Go back to the main view (Esc)")
 
         if len(self.current_project.tasks) > 1:
-            # Add a button to clear all tasks in the project if there are more than 1 tasks
             clear_tasks_button = QPushButton("Clear Tasks")
             clear_tasks_button.clicked.connect(lambda: self.clear_tasks(self.current_project) if self.current_project else None)
             clear_tasks_button.setStyleSheet(Style(self.mode).style_sheet(2))
@@ -525,19 +622,15 @@ class MainWindow(QMainWindow):
         main_layout.addLayout(horizontal_layout)
 
         if not self.current_project.tasks:
-            # If there are no tasks, display a message to say so
             no_tasks_label = QLabel(f"No tasks for {self.current_project.name}.")
             no_tasks_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             main_layout.addWidget(no_tasks_label)
             
-            # Add stretch to push toggle button to bottom
             main_layout.addStretch()
             
-            # Add toggle mode button at bottom right even when no tasks
             toggle_layout = QHBoxLayout()
             toggle_layout.addStretch()
             
-            # Light/Dark mode toggle button
             toggle_mode_button = QPushButton("🌙" if self.mode == 0 else "☀️")
             toggle_mode_button.setStyleSheet(Style(self.mode).style_sheet(2))
             toggle_mode_button.clicked.connect(lambda: self.toggle_mode())
@@ -549,14 +642,11 @@ class MainWindow(QMainWindow):
             main_layout.addLayout(toggle_layout)
             return
         
-        # Sort tasks by priority (lowest number = highest priority)
         self.current_project.tasks.sort(key=lambda t: t.priority)
         
         for task in self.current_project.tasks:
-            # For each task, create a horizontal layout with priority, checkbox and buttons
             task_layout = QHBoxLayout()
             
-            # Create a priority label/button
             priority_button = QPushButton(f"#{task.priority}")
             priority_button.clicked.connect(lambda _, t=task: self.change_task_priority(t))
             priority_button.setStyleSheet(Style(self.mode).style_sheet(3))
@@ -564,7 +654,6 @@ class MainWindow(QMainWindow):
             priority_button.setFixedHeight(30)
             task_layout.addWidget(priority_button)
             
-            # Create a checkbox for the task
             task_checkbox = QCheckBox(task.name)
             task_checkbox.setChecked(task.completed)
             task_checkbox.stateChanged.connect(lambda state, t=task: self.toggle_task_completion(t, state))
@@ -572,7 +661,6 @@ class MainWindow(QMainWindow):
             task_checkbox.setFixedHeight(30)
             task_layout.addWidget(task_checkbox)
             
-            # Create a button to remove the task
             delete_task_button = QPushButton("Remove Task")
             delete_task_button.clicked.connect(lambda _, t=task: self.remove_task(t))
             delete_task_button.setStyleSheet(Style(self.mode).style_sheet(3))
@@ -581,14 +669,11 @@ class MainWindow(QMainWindow):
             
             main_layout.addLayout(task_layout)
         
-        # Add stretch to push toggle button to bottom
         main_layout.addStretch()
         
-        # Add toggle mode button at bottom right after task list
         toggle_layout = QHBoxLayout()
         toggle_layout.addStretch()
         
-        # Light/Dark mode toggle button
         toggle_mode_button = QPushButton("🌙" if self.mode == 0 else "☀️")
         toggle_mode_button.setStyleSheet(Style(self.mode).style_sheet(2))
         toggle_mode_button.clicked.connect(lambda: self.toggle_mode())
@@ -599,70 +684,99 @@ class MainWindow(QMainWindow):
         
         main_layout.addLayout(toggle_layout)
 
-    # Function to clear all tasks in the project
-    def clear_tasks(self, project: Project):
+    def clear_tasks(self, project: Project) -> None:
+        """
+        Clears all tasks for the specified project after user confirmation.
+        Args:
+            project (Project): The project for which to clear tasks.
+        This method prompts the user with a confirmation dialog before clearing the tasks.
+        If the user confirms, it clears the tasks list for the project, saves the updated project list to the JSON file,
+        and refreshes the UI.
+        """
         item, ok = QInputDialog.getItem(self, "Clear Tasks", f"Are you sure you want to clear all tasks for '{project.name}'?", ["Yes", "No"])
         if ok and item == "Yes":
             project.tasks.clear()
             save_projects(self.projects)
             self.refresh_ui()
     
-    # Function to add a new task to the project
-    def add_task(self, project: Project):
+    def add_task(self, project: Project) -> None:
+        """
+        Adds a new task to the specified project after user input.
+        Args:
+            project (Project): The project to which the new task will be added.
+        This method prompts the user to enter a task name. If the name is valid and does not already exist in the project,
+        it creates a new Task object with the specified name and a priority based on the current number of tasks.
+        If the task name already exists, it shows a warning message.
+        If the user cancels the input dialog, it simply returns without making any changes.
+        """
         task_name, ok = QInputDialog.getText(self, "Add Task", "Enter task name:")
-        # Check if the task name already exists
         if task_name in [t.name for t in project.tasks]:
-            # If it does, show a warning message and return
             QMessageBox.warning(self, "Warning", "Task name already exists.")
             return
         if ok and task_name:
-            # Calculate the priority for the new task (lowest priority by default)
             new_priority = len(project.tasks) + 1
             
-            # Create and add the new task
             project.tasks.append(Task(name=task_name, priority=new_priority))
             save_projects(self.projects)
         else:
-            # If the user did not enter a task name or cancelled, do not add the task and return
             return
         self.change_task_priority(project.tasks[-1], mode="add")
         self.refresh_ui()
         
-    # Function to remove a task from the project    
-    def remove_task(self, task: Task):
+    def remove_task(self, task: Task) -> None:
+        """
+        Removes a task from the current project.
+        Args:
+            task (Task): The task to remove from the current project.
+        This method checks if there is a current project set. If so, it removes the specified task from the project's task list,
+        saves the updated project list to the JSON file, and refreshes the UI.
+        """
         if self.current_project:
             self.current_project.tasks.remove(task)
             save_projects(self.projects)
             self.refresh_ui()
     
-    # Function to toggle the completion state of a task
-    def toggle_task_completion(self, task: Task, state):
+    def toggle_task_completion(self, task: Task, state) -> None:
+        """
+        Toggles the completion state of a task.
+        Args:
+            task (Task): The task whose completion state is to be toggled.
+            state (Qt.CheckState): The new state of the task's completion checkbox.
+        This method checks if there is a current project set. If so, it updates the task's completed attribute based on the checkbox state,
+        and saves the updated project list to the JSON file.
+        """
         task.completed = (state == Qt.CheckState.Checked.value)
         save_projects(self.projects)
 
-    # Function to change or add the priority of a task depending on the mode (edit or add)
-    def change_task_priority(self, task: Task, mode="edit"):
+    def change_task_priority(self, task: Task, mode="edit") -> None:
+        """
+        Changes the priority of a task within the current project.
+        Args:
+            task (Task): The task whose priority is to be changed.
+            mode (str): The mode for changing the priority. "edit" for editing an existing task, "add" for adding a new task.
+        This method prompts the user to select a new priority for the task. The priority is represented as a number,
+        where a lower number indicates a higher priority.
+        If the mode is "add", it allows the user to select a priority for the new task.
+        If the mode is "edit", it allows the user to change the priority of an existing task.
+        If the new priority is different from the old priority, it adjusts the priorities of other tasks accordingly,
+        ensuring that no two tasks have the same priority.
+        """
         if not self.current_project:
             return
             
-        # Prompt message and title based on the mode
         prompt_title = "Change Task Priority"
         prompt = "Select new priority (lower number = higher priority)"
         
         if mode == "add":
-            # If there is no other tasks, dont prompt for priority
             if len(self.current_project.tasks) == 1:
                 return
             prompt_title = "Task Priority"
             prompt = "Select priority for task (lower number = higher priority)"
 
-        # Get the current number of tasks
         num_tasks = len(self.current_project.tasks)
         
-        # Create a list of priority options from 1 to num_tasks
         priority_options = [str(i) for i in range(1, num_tasks + 1)]
         
-        # Show dialog to select priority
         priority, ok = QInputDialog.getItem(
             self,
             prompt_title,
@@ -675,38 +789,28 @@ class MainWindow(QMainWindow):
             new_priority = int(priority)
             old_priority = task.priority
             
-            # Update priorities of other tasks to maintain consistency
             if new_priority != old_priority:
-                # If moving to a higher priority (lower number)
                 if new_priority < old_priority:
                     for t in self.current_project.tasks:
                         if t != task and new_priority <= t.priority < old_priority:
                             t.priority += 1
-                # If moving to a lower priority (higher number)
                 else:
                     for t in self.current_project.tasks:
                         if t != task and old_priority < t.priority <= new_priority:
                             t.priority -= 1
             
-                # Set the new priority for this task
                 task.priority = new_priority
                 
-                # Save and refresh
                 save_projects(self.projects)
                 self.refresh_ui()
 
-# Main function to create and show the main window
-def main():
-    # Create the application instance 
+if __name__ == "__main__":
+    """
+    Main entry point for the Project Manager application.
+    """
     app = QApplication(sys.argv)
 
-    # Create and show the main window
     main_window = MainWindow()
     main_window.show()
     
-    # Start the application event loop
-    sys.exit(app.exec())
-    
-# Run the main function when the application is executed
-if __name__ == "__main__":
-    main()
+    sys.exit(app.exec()) 
