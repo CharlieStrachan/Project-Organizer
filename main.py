@@ -39,6 +39,164 @@ class Project:
     description: str = "No description provided."
     tasks: list[Task] = field(default_factory=list)
 
+class TaskManager:
+    """
+    Class for managing tasks within a project.
+    This class handles all task-related operations including adding, removing,
+    and modifying tasks within a project.
+    Attributes:
+        projects (list[Project]): List of all projects.
+        save_callback (callable): Function to call when saving projects.
+    Methods:
+        clear_tasks(project, parent_widget): Clears all tasks for the specified project after user confirmation.
+        add_task(project, parent_widget): Adds a new task to the specified project after user input.
+        remove_task(task, project): Removes a task from the specified project.
+        toggle_task_completion(task, state): Toggles the completion state of a task.
+        change_task_priority(task, project, parent_widget, mode="edit"): Changes the priority of a task within the specified project.
+    This class provides methods to manage tasks in a project, including adding new tasks,
+    removing tasks, toggling task completion, and changing task priorities.
+    """
+    
+    def __init__(self, projects: list[Project], save_callback) -> None:
+        """
+        Initializes the TaskManager.
+        Args:
+            projects (list[Project]): List of all projects.
+            save_callback (callable): Function to call when saving projects.
+        """
+        self.projects = projects
+        self.save_callback = save_callback
+    
+    def clear_tasks(self, project: Project, parent_widget) -> bool:
+        """
+        Clears all tasks for the specified project after user confirmation.
+        Args:
+            project (Project): The project for which to clear tasks.
+            parent_widget: The parent widget for the confirmation dialog.
+        Returns:
+            bool: True if tasks were cleared successfully, False otherwise.
+        This method prompts the user with a confirmation dialog before clearing the tasks.
+        If the user confirms, it clears the tasks list for the project, saves the updated project list to the JSON file,
+        and refreshes the UI.
+        """
+        item, ok = QInputDialog.getItem(parent_widget, "Clear Tasks", f"Are you sure you want to clear all tasks for '{project.name}'?", ["Yes", "No"])
+        if ok and item == "Yes":
+            project.tasks.clear()
+            self.save_callback(self.projects)
+            return True
+        return False
+    
+    def add_task(self, project: Project, parent_widget) -> bool:
+        """
+        Adds a new task to the specified project after user input.
+        Args:
+            project (Project): The project to which the new task will be added.
+            parent_widget: The parent widget for the input dialog.
+        Returns:
+            bool: True if task was added successfully, False otherwise.
+        This method prompts the user to enter a task name. If the name is valid and does not already exist in the project,
+        it creates a new Task object with the specified name and a priority based on the current number of tasks.
+        If the task name already exists, it shows a warning message.
+        If the user cancels the input dialog, it simply returns without making any changes.
+        """
+        task_name, ok = QInputDialog.getText(parent_widget, "Add Task", "Enter task name:")
+        if not ok or not task_name.strip():
+            return False
+            
+        if task_name in [t.name for t in project.tasks]:
+            QMessageBox.warning(parent_widget, "Warning", "Task name already exists.")
+            return False
+
+        new_priority = len(project.tasks) + 1
+        new_task = Task(name=task_name, priority=new_priority)
+        project.tasks.append(new_task)
+        self.save_callback(self.projects)
+        
+        self.change_task_priority(new_task, project, parent_widget, mode="add")
+        return True
+        
+    def remove_task(self, task: Task, project: Project) -> None:
+        """
+        Removes a task from the specified project.
+        Args:
+            task (Task): The task to remove from the project.
+            project (Project): The project from which to remove the task.
+        This method removes the specified task from the project's task list,
+        saves the updated project list to the JSON file.
+        """
+        if project and task in project.tasks:
+            project.tasks.remove(task)
+            self.save_callback(self.projects)
+    
+    def toggle_task_completion(self, task: Task, state) -> None:
+        """
+        Toggles the completion state of a task.
+        Args:
+            task (Task): The task whose completion state is to be toggled.
+            state (Qt.CheckState): The new state of the task's completion checkbox.
+        This method updates the task's completed attribute based on the checkbox state,
+        and saves the updated project list to the JSON file.
+        """
+        task.completed = (state == Qt.CheckState.Checked.value)
+        self.save_callback(self.projects)
+
+    def change_task_priority(self, task: Task, project: Project, parent_widget, mode="edit") -> None:
+        """
+        Changes the priority of a task within the specified project.
+        Args:
+            task (Task): The task whose priority is to be changed.
+            project (Project): The project containing the task.
+            parent_widget: The parent widget for the input dialog.
+            mode (str): The mode for changing the priority. "edit" for editing an existing task, "add" for adding a new task.
+        This method prompts the user to select a new priority for the task. The priority is represented as a number,
+        where a lower number indicates a higher priority.
+        If the mode is "add", it allows the user to select a priority for the new task.
+        If the mode is "edit", it allows the user to change the priority of an existing task.
+        If the new priority is different from the old priority, it adjusts the priorities of other tasks accordingly,
+        ensuring that no two tasks have the same priority.
+        """
+        if not project:
+            return
+            
+        prompt_title = "Change Task Priority"
+        prompt = "Select new priority (lower number = higher priority)"
+        
+        if mode == "add":
+            if len(project.tasks) == 1:
+                return
+            prompt_title = "Task Priority"
+            prompt = "Select priority for task (lower number = higher priority)"
+
+        num_tasks = len(project.tasks)
+        
+        priority_options = [str(i) for i in range(1, num_tasks + 1)]
+        
+        priority, ok = QInputDialog.getItem(
+            parent_widget,
+            prompt_title,
+            prompt,
+            priority_options,
+            min(task.priority - 1, num_tasks - 1)
+        )
+        
+        if ok and priority:
+            new_priority = int(priority)
+            old_priority = task.priority
+            
+            if new_priority != old_priority:
+                if new_priority < old_priority:
+                    for t in project.tasks:
+                        if t != task and new_priority <= t.priority < old_priority:
+                            t.priority += 1
+                else:
+                    for t in project.tasks:
+                        if t != task and old_priority < t.priority <= new_priority:
+                            t.priority -= 1
+            
+                task.priority = new_priority
+                
+                self.save_callback(self.projects)
+
 def load_projects(filename="projects.json") -> list[Project]:
     """
     Load projects from a JSON file.
@@ -113,6 +271,7 @@ class MainWindow(QMainWindow):
         current_project (Project): The currently selected project.
         main_view_initialized (bool): Flag to check if the main view has been initialized.
         project_view_initialized (bool): Flag to check if the project view has been initialized.
+        task_manager (TaskManager): Instance for managing tasks.
     Methods:
         __init__(): Initializes the main window and sets up the UI.
         setup_main_view(): Sets up the main view of the application.
@@ -140,6 +299,8 @@ class MainWindow(QMainWindow):
         
         self.main_view_initialized = False
         self.project_view_initialized = False
+        
+        self.task_manager = TaskManager(self.projects, save_projects)
 
         self.setWindowTitle("Project Manager")
         self.setWindowIcon(QIcon("icon.png"))
@@ -480,7 +641,7 @@ class MainWindow(QMainWindow):
         horizontal_layout.addWidget(back_button)
 
         add_task_button = QPushButton("Add Task")
-        add_task_button.clicked.connect(lambda: self.add_task(self.current_project) if self.current_project else None)
+        add_task_button.clicked.connect(lambda: self.add_task_and_refresh())
         add_task_button.setStyleSheet(Style(self.mode).style_sheet(2))
         horizontal_layout.addWidget(add_task_button)
 
@@ -491,7 +652,7 @@ class MainWindow(QMainWindow):
 
         if len(self.current_project.tasks) > 1:
             clear_tasks_button = QPushButton("Clear Tasks")
-            clear_tasks_button.clicked.connect(lambda: self.clear_tasks(self.current_project) if self.current_project else None)
+            clear_tasks_button.clicked.connect(lambda: self.clear_tasks_and_refresh())
             clear_tasks_button.setStyleSheet(Style(self.mode).style_sheet(2))
             horizontal_layout.addWidget(clear_tasks_button)
             clear_tasks_button.setShortcut("Ctrl+C")
@@ -526,7 +687,7 @@ class MainWindow(QMainWindow):
             task_layout = QHBoxLayout()
             
             priority_button = QPushButton(f"#{task.priority}")
-            priority_button.clicked.connect(lambda _, t=task: self.change_task_priority(t))
+            priority_button.clicked.connect(lambda _, t=task: self.change_priority_and_refresh(t))
             priority_button.setStyleSheet(Style(self.mode).style_sheet(3))
             priority_button.setFixedWidth(50)
             priority_button.setFixedHeight(30)
@@ -534,13 +695,13 @@ class MainWindow(QMainWindow):
             
             task_checkbox = QCheckBox(task.name)
             task_checkbox.setChecked(task.completed)
-            task_checkbox.stateChanged.connect(lambda state, t=task: self.toggle_task_completion(t, state))
+            task_checkbox.stateChanged.connect(lambda state, t=task: self.task_manager.toggle_task_completion(t, state))
             task_checkbox.setStyleSheet(Style(self.mode).style_sheet(3))
             task_checkbox.setFixedHeight(30)
             task_layout.addWidget(task_checkbox)
             
             delete_task_button = QPushButton("Remove Task")
-            delete_task_button.clicked.connect(lambda _, t=task: self.remove_task(t))
+            delete_task_button.clicked.connect(lambda _, t=task: self.remove_task_and_refresh(t))
             delete_task_button.setStyleSheet(Style(self.mode).style_sheet(3))
             delete_task_button.setFixedHeight(30)
             task_layout.addWidget(delete_task_button)
@@ -562,125 +723,29 @@ class MainWindow(QMainWindow):
         
         main_layout.addLayout(toggle_layout)
 
-    def clear_tasks(self, project: Project) -> None:
-        """
-        Clears all tasks for the specified project after user confirmation.
-        Args:
-            project (Project): The project for which to clear tasks.
-        This method prompts the user with a confirmation dialog before clearing the tasks.
-        If the user confirms, it clears the tasks list for the project, saves the updated project list to the JSON file,
-        and refreshes the UI.
-        """
-        item, ok = QInputDialog.getItem(self, "Clear Tasks", f"Are you sure you want to clear all tasks for '{project.name}'?", ["Yes", "No"])
-        if ok and item == "Yes":
-            project.tasks.clear()
-            save_projects(self.projects)
-            self.refresh_ui()
-    
-    def add_task(self, project: Project) -> None:
-        """
-        Adds a new task to the specified project after user input.
-        Args:
-            project (Project): The project to which the new task will be added.
-        This method prompts the user to enter a task name. If the name is valid and does not already exist in the project,
-        it creates a new Task object with the specified name and a priority based on the current number of tasks.
-        If the task name already exists, it shows a warning message.
-        If the user cancels the input dialog, it simply returns without making any changes.
-        """
-        task_name, ok = QInputDialog.getText(self, "Add Task", "Enter task name:")
-        if task_name in [t.name for t in project.tasks]:
-            QMessageBox.warning(self, "Warning", "Task name already exists.")
-            return
-
-            new_priority = len(project.tasks) + 1
-            
-            project.tasks.append(Task(name=task_name, priority=new_priority))
-            save_projects(self.projects)
-        else:
-            return
-        self.change_task_priority(project.tasks[-1], mode="add")
-        self.refresh_ui()
-        
-    def remove_task(self, task: Task) -> None:
-        """
-        Removes a task from the current project.
-        Args:
-            task (Task): The task to remove from the current project.
-        This method checks if there is a current project set. If so, it removes the specified task from the project's task list,
-        saves the updated project list to the JSON file, and refreshes the UI.
-        """
+    def add_task_and_refresh(self) -> None:
+        """Helper method to add a task and refresh the UI."""
         if self.current_project:
-            self.current_project.tasks.remove(task)
-            save_projects(self.projects)
-            self.refresh_ui()
-    
-    def toggle_task_completion(self, task: Task, state) -> None:
-        """
-        Toggles the completion state of a task.
-        Args:
-            task (Task): The task whose completion state is to be toggled.
-            state (Qt.CheckState): The new state of the task's completion checkbox.
-        This method checks if there is a current project set. If so, it updates the task's completed attribute based on the checkbox state,
-        and saves the updated project list to the JSON file.
-        """
-        task.completed = (state == Qt.CheckState.Checked.value)
-        save_projects(self.projects)
-
-    def change_task_priority(self, task: Task, mode="edit") -> None:
-        """
-        Changes the priority of a task within the current project.
-        Args:
-            task (Task): The task whose priority is to be changed.
-            mode (str): The mode for changing the priority. "edit" for editing an existing task, "add" for adding a new task.
-        This method prompts the user to select a new priority for the task. The priority is represented as a number,
-        where a lower number indicates a higher priority.
-        If the mode is "add", it allows the user to select a priority for the new task.
-        If the mode is "edit", it allows the user to change the priority of an existing task.
-        If the new priority is different from the old priority, it adjusts the priorities of other tasks accordingly,
-        ensuring that no two tasks have the same priority.
-        """
-        if not self.current_project:
-            return
-            
-        prompt_title = "Change Task Priority"
-        prompt = "Select new priority (lower number = higher priority)"
-        
-        if mode == "add":
-            if len(self.current_project.tasks) == 1:
-                return
-            prompt_title = "Task Priority"
-            prompt = "Select priority for task (lower number = higher priority)"
-
-        num_tasks = len(self.current_project.tasks)
-        
-        priority_options = [str(i) for i in range(1, num_tasks + 1)]
-        
-        priority, ok = QInputDialog.getItem(
-            self,
-            prompt_title,
-            prompt,
-            priority_options,
-            min(task.priority - 1, num_tasks - 1)
-        )
-        
-        if ok and priority:
-            new_priority = int(priority)
-            old_priority = task.priority
-            
-            if new_priority != old_priority:
-                if new_priority < old_priority:
-                    for t in self.current_project.tasks:
-                        if t != task and new_priority <= t.priority < old_priority:
-                            t.priority += 1
-                else:
-                    for t in self.current_project.tasks:
-                        if t != task and old_priority < t.priority <= new_priority:
-                            t.priority -= 1
-            
-                task.priority = new_priority
-                
-                save_projects(self.projects)
+            if self.task_manager.add_task(self.current_project, self):
                 self.refresh_ui()
+
+    def clear_tasks_and_refresh(self) -> None:
+        """Helper method to clear tasks and refresh the UI."""
+        if self.current_project:
+            if self.task_manager.clear_tasks(self.current_project, self):
+                self.refresh_ui()
+
+    def remove_task_and_refresh(self, task: Task) -> None:
+        """Helper method to remove a task and refresh the UI."""
+        if self.current_project:
+            self.task_manager.remove_task(task, self.current_project)
+            self.refresh_ui()
+
+    def change_priority_and_refresh(self, task: Task) -> None:
+        """Helper method to change task priority and refresh the UI."""
+        if self.current_project:
+            self.task_manager.change_task_priority(task, self.current_project, self)
+            self.refresh_ui()
 
 if __name__ == "__main__":
     """
@@ -691,4 +756,4 @@ if __name__ == "__main__":
     main_window = MainWindow()
     main_window.show()
     
-    sys.exit(app.exec()) 
+    sys.exit(app.exec())
